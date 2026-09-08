@@ -1,0 +1,190 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const pageTitle = 'Livraisons et retours';
+const pageDescription = 'Informations sur les frais de livraison, les transporteurs, les délais de livraison et la politique de retour chez Hercules Merchandising France.';
+---
+
+<BaseLayout
+  title={pageTitle}
+  description={pageDescription}
+  pageType="page"
+>
+  <!-- Breadcrumb -->
+  <section class="breadcrumb-section">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <ol itemscope itemtype="https://schema.org/BreadcrumbList">
+          <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+            <a href="/" itemprop="item">
+              <span itemprop="name">Accueil</span>
+            </a>
+            <meta itemprop="position" content="1" />
+            <span class="separator"><img src="/images/breadcrumb-separator.svg" alt="" width="6" height="12" /></span>
+          </li>
+          <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+            <span itemprop="name">Livraisons et retours</span>
+            <meta itemprop="position" content="2" />
+          </li>
+        </ol>
+      </nav>
+    </div>
+  </section>
+
+  <!-- Main Content -->
+  <section class="page-section">
+    <div class="container">
+      <div class="content-wrapper">
+        <h1>LIVRAISONS ET RETOURS</h1>
+
+        <div class="content-card">
+          <div class="qa-item">
+            <h2>A. Quels sont les frais de livraison?</h2>
+            <p>Les frais de transport, pour une livraison vers un pays de l'Union Européenne, sont inclus dans les prix mentionnés sur notre site (sauf indication contraire).</p>
+            <p>Pour les livraisons en Suisse ou en dehors de l'Union Européenne, merci de nous contacter.</p>
+            <p>Des envois par express sont disponibles pour certains articles et pays.</p>
+          </div>
+
+          <div class="qa-item">
+            <h2>B. Quels transporteurs utilisez-vous?</h2>
+            <p>Cela dépend de l'article commandé, et surtout de l'usine qui enverra votre colis. Nous utilisons plusieurs transporteurs comme Chronopost, UPS ou encore DHL.</p>
+          </div>
+
+          <div class="qa-item">
+            <h2>C. Quel est le temps de livraison?</h2>
+            <p>Pour des envois standard il faut compter entre 3 et 5 jours ouvrés.</p>
+            <p>Les envoie express prennent 24 ou 48h pour être livrés.</p>
+          </div>
+
+          <div class="qa-item">
+            <h2>D. Retours et échanges</h2>
+            <p>Si pour quelque raison que ce soit vous n'êtes pas satisfait avec le produit acheté, contactez-nous endéans les 14 jours de réception du produit.</p>
+            <p>S'il s'agit manifestement d'un défaut de fabrication, nous remplacerons l'article dans les plus brefs délais.</p>
+            <p>Attention, il n'est pas possible de retourner un article produit sur mesure, sauf en cas de défaut de fabrication!</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .breadcrumb-section {
+    background: #FAFAFA;
+    padding: 15px 0;
+  }
+
+  .container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+
+  .breadcrumb {
+    font-family: 'Jost', sans-serif;
+    font-size: 14px;
+  }
+
+  .breadcrumb ol {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .breadcrumb li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .breadcrumb a {
+    color: #787878;
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .breadcrumb a:hover {
+    color: #469ADC;
+  }
+
+  .breadcrumb li:last-child span {
+    color: #469ADC;
+  }
+
+  .breadcrumb .separator {
+    display: flex;
+    align-items: center;
+  }
+
+  .page-section {
+    background: #FAFAFA;
+    padding: 40px 0 80px;
+  }
+
+  .content-wrapper {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    font-family: 'Jost', sans-serif;
+    font-size: 42px;
+    font-weight: 600;
+    color: #253461;
+    text-align: center;
+    margin-bottom: 40px;
+    text-transform: uppercase;
+  }
+
+  .content-card {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 50px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  }
+
+  .qa-item {
+    margin-bottom: 30px;
+    padding-bottom: 30px;
+    border-bottom: 1px solid #E8E8E8;
+  }
+
+  .qa-item:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  .qa-item h2 {
+    font-family: 'Jost', sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: #253461;
+    margin: 0 0 12px;
+  }
+
+  .qa-item p {
+    font-family: 'Roboto', sans-serif;
+    font-size: 16px;
+    line-height: 1.7;
+    color: #5F5F5F;
+    margin: 0;
+  }
+
+  @media (max-width: 768px) {
+    h1 {
+      font-size: 28px;
+    }
+
+    .content-card {
+      padding: 30px 20px;
+    }
+
+    .qa-item h2 {
+      font-size: 18px;
+    }
+  }
+</style>

@@ -1,0 +1,23 @@
+# Hercules NL — form handler, STAGING lane.
+# No [[routes]] yet: the hercules-merchandise.nl zone does not exist. Routes go on the
+# .nl zone ONLY — never on a live zone.
+name = "hercules-form-handler-nl"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+[vars]
+# Sender must be a Brevo-verified address on the NL domain (Phase 0, Gilles)
+SENDER_EMAIL = "info@hercules-merchandise.nl"
+SENDER_NAME = "Hercules Merchandise"
+COMPANY_EMAIL = "info@hercules-merchandise.nl"
+R2_PUBLIC_URL = "https://pub-3dae2eda626f4ab4a403388bd2068fac.r2.dev"   # hercules-nl-form-uploads
+PRODUCT_SYNC_URL = "https://hercules-product-sync-nl.gilles-86d.workers.dev"
+# Secrets: BREVO_API_KEY, GOOGLE_APPS_SCRIPT_URL, WEBHOOK_SECRET via `wrangler secret put`
+
+# [[routes]]
+# pattern = "staging.hercules-merchandise.nl/api/*"
+# zone_name = "hercules-merchandise.nl"
+
+[[r2_buckets]]
+binding = "FORM_UPLOADS"
+bucket_name = "hercules-nl-form-uploads"

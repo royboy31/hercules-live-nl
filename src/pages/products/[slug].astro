@@ -1,0 +1,3190 @@
+---
+/**
+ * Product Detail Page - /products/[slug]
+ * Fetches product data from Worker API and renders the product page
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProductConfigurator from '../../components/ProductConfigurator.tsx';
+import ContactFormPopup from '../../components/ContactFormPopup.tsx';
+import TrustLogos from '../../components/TrustLogos.astro';
+import '../../styles/steps.css';
+import {
+  siteConfig,
+  getProductSchema,
+  getBreadcrumbSchema,
+  getFAQSchema,
+  truncateDescription,
+  stripHtml
+} from '../../config/seo';
+import { maillotClusterFaq } from '../../data/maillot-cluster-faq';
+import { getProductSeoOverride } from '../../config/seo-overrides';
+import { getGooglePlaceData } from '../../lib/google-places';
+import { normalizeInternalLinks } from '../../lib/cleanHtml';
+import { ga4ItemId, lowestTierPrice } from '../../lib/tracking';
+
+const WORKER_URL = import.meta.env.WORKER_URL || 'https://hercules-product-sync-nl-prod.gilles-86d.workers.dev';
+
+// Get product slug from URL
+const { slug } = Astro.params;
+
+// Fetch product data
+let product = null;
+let error = null;
+
+try {
+  const response = await fetch(`${WORKER_URL}/product/${slug}`);
+  if (response.ok) {
+    product = await response.json();
+  } else {
+    error = `Product not found: ${slug}`;
+  }
+} catch (e) {
+  error = `Failed to load product: ${e instanceof Error ? e.message : 'Unknown error'}`;
+}
+
+// Helper to format price
+const formatPrice = (price: number | string) => {
+  const num = typeof price === 'string' ? parseFloat(price) : price;
+  return `${num.toFixed(2).replace('.', ',')} €`;
+};
+
+// Get conditional prices for display (use first variation with prices)
+const getConditionalPrices = () => {
+  if (!product?.variations?.length) return [];
+  const variation = product.variations.find((v: any) => v.conditional_prices?.length);
+  return variation?.conditional_prices || [];
+};
+
+// Get price range from all variations
+const getPriceRange = () => {
+  if (!product?.variations?.length) return null;
+
+  let minPrice = Infinity;
+  let maxPrice = 0;
+
+  for (const variation of product.variations) {
+    if (variation.conditional_prices?.length) {
+      for (const cp of variation.conditional_prices) {
+        if (cp.price < minPrice) minPrice = cp.price;
+        if (cp.price > maxPrice) maxPrice = cp.price;
+      }
+    }
+  }
+
+  if (minPrice === Infinity) return null;
+  return { min: minPrice, max: maxPrice };
+};
+
+const conditionalPrices = getConditionalPrices();
+const priceRange = getPriceRange();
+
+// Get lead time from first variation
+const leadTime = product?.variations?.[0]?.lead_time || '';
+
+// Parse price string that may use comma as decimal separator (e.g. "24,95" → 24.95)
+const parsePrice = (val: number | string): number => {
+  if (typeof val === 'number') return val;
+  return parseFloat(val.replace(',', '.'));
+};
+
+// Fetch product config from WP API at build time (includes addons with price_tables)
+let productConfig: any = null;
+if (product) {
+  try {
+    const configRes = await fetch(`${WORKER_URL}/product-config/${slug}`);
+    if (configRes.ok) {
+      productConfig = await configRes.json();
+    }
+  } catch (e) {
+    console.error('Failed to fetch product config:', e);
+  }
+}
+
+// Build pricing table mirroring the steps form logic.
+const buildPricingCombinations = () => {
+  if (!productConfig) return { tiers: [], combos: [] };
+
+  const variations = productConfig.variations || [];
+  const pricedVariations = variations.filter((v: any) => v.conditional_prices?.length > 0);
+  if (!pricedVariations.length) return { tiers: [], combos: [] };
+
+  // Get quantity tiers as union from ALL variations
+  const tierSet = new Set<number>();
+  for (const v of pricedVariations) {
+    for (const cp of v.conditional_prices) {
+      tierSet.add(typeof cp.qty === 'string' ? parseInt(cp.qty) : cp.qty);
+    }
+  }
+  const tiers = [...tierSet].sort((a: number, b: number) => a - b);
+
+  const allAttrKeys = Object.keys(productConfig.attributes || {});
+  const visibleAttrKeys = allAttrKeys.filter((key: string) => {
+    const attr = productConfig.attributes[key];
+    return !(attr.terms?.length === 1 && attr.terms[0].slug === 'default');
+  });
+
+  const addons = (productConfig.addons || []) as any[];
+  const pricedParentAddons = addons.filter((a: any) =>
+    a.parent_id === 0 && a.options?.some((o: any) => o.price_table?.length > 0)
+  );
+
+  type StepOption = { label: string; attrSlug?: string; attrKey?: string; addonId?: number; addonName?: string; priceTable?: any[] };
+  type Step = { name: string; options: StepOption[] };
+  const steps: Step[] = [];
+
+  for (const attrKey of visibleAttrKeys) {
+    const attr = productConfig.attributes[attrKey];
+    steps.push({
+      name: attr.display_title || attrKey,
+      options: attr.terms.map((t: any) => ({
+        label: t.name,
+        attrSlug: t.slug,
+        attrKey,
+      })),
+    });
+  }
+
+  for (const addon of pricedParentAddons) {
+    const opts = addon.options || [];
+    const freeOpts = opts.filter((o: any) => !o.price_table?.length);
+    const pricedOpts = opts.filter((o: any) => o.price_table?.length > 0);
+
+    if (opts.length <= 4) {
+      steps.push({
+        name: addon.name,
+        options: opts.map((o: any) => ({
+          label: o.name,
+          addonId: addon.id,
+          addonName: o.name,
+          priceTable: o.price_table || [],
+        })),
+      });
+    } else {
+      const stepOptions: StepOption[] = [];
+
+      if (freeOpts.length > 0) {
+        stepOptions.push({
+          label: freeOpts[0].name,
+          addonId: addon.id,
+          addonName: freeOpts[0].name,
+          priceTable: [],
+        });
+      }
+
+      const priceGroups = new Map<string, any>();
+      for (const opt of pricedOpts) {
+        const key = opt.price_table.map((p: any) => `${p.qty}:${p.price}`).join('|');
+        if (!priceGroups.has(key)) {
+          priceGroups.set(key, opt);
+        }
+      }
+
+      const addonBaseName = addon.name
+        .replace(/-Sélection/i, '').replace(/Sélection/i, '').replace(/-Couleur/i, '').replace(/-Choix/i, '').trim();
+      if (priceGroups.size === 1) {
+        const representative = priceGroups.values().next().value;
+        stepOptions.push({
+          label: `Avec ${addonBaseName}`,
+          addonId: addon.id,
+          addonName: representative.name,
+          priceTable: representative.price_table,
+        });
+      } else {
+        for (const [, opt] of priceGroups) {
+          stepOptions.push({
+            label: opt.name,
+            addonId: addon.id,
+            addonName: opt.name,
+            priceTable: opt.price_table,
+          });
+        }
+      }
+
+      steps.push({ name: addon.name, options: stepOptions });
+    }
+  }
+
+  // No visible steps but variations have prices — show simple price row
+  if (steps.length === 0) {
+    if (pricedVariations.length > 0) {
+      const simplePrices = tiers.map((qty: number) => {
+        const cp = pricedVariations[0].conditional_prices.find((p: any) =>
+          (typeof p.qty === 'string' ? parseInt(p.qty) : p.qty) === qty
+        );
+        return cp ? parsePrice(cp.price) : 0;
+      });
+      return { tiers, combos: [{ label: 'Standard', prices: simplePrices }] };
+    }
+    return { tiers: [], combos: [] };
+  }
+
+  type ComboRow = { labels: string[]; attrSelections: Record<string, string>; priceTables: any[][] };
+  let rows: ComboRow[] = [{ labels: [], attrSelections: {}, priceTables: [] }];
+
+  for (const step of steps) {
+    if (rows.length * step.options.length > 100) continue;
+    const newRows: ComboRow[] = [];
+    for (const row of rows) {
+      for (const opt of step.options) {
+        const newAttrSelections = { ...row.attrSelections };
+        if (opt.attrKey) {
+          newAttrSelections[opt.attrKey] = opt.attrSlug!;
+        }
+        newRows.push({
+          labels: [...row.labels, opt.label],
+          attrSelections: newAttrSelections,
+          priceTables: [...row.priceTables, ...(opt.priceTable?.length ? [opt.priceTable] : [])],
+        });
+      }
+    }
+    rows = newRows;
+  }
+
+  const getAddonPrice = (priceTable: any[], qty: number): number => {
+    if (!priceTable?.length) return 0;
+    const sorted = [...priceTable]
+      .map((p: any) => ({ qty: typeof p.qty === 'string' ? parseInt(p.qty) : p.qty, price: parsePrice(p.price) }))
+      .sort((a: any, b: any) => a.qty - b.qty);
+    let price = 0;
+    for (const tier of sorted) {
+      if (tier.qty <= qty) price = tier.price;
+    }
+    return price;
+  };
+
+  const combos = rows.map((row: ComboRow) => {
+    const matchedVar = pricedVariations.find((v: any) => {
+      return Object.entries(v.attributes).every(([key, value]: [string, any]) => {
+        const normalizedKey = key.replace('attribute_', '');
+        const selected = row.attrSelections[key] || row.attrSelections[normalizedKey];
+        return selected === value || value === 'default';
+      });
+    });
+
+    const prices = tiers.map((qty: number) => {
+      let basePrice = 0;
+      if (matchedVar) {
+        // Use closest tier <= qty (same logic as addon price lookup)
+        const sorted = [...matchedVar.conditional_prices]
+          .map((c: any) => ({ qty: typeof c.qty === 'string' ? parseInt(c.qty) : c.qty, price: parsePrice(c.price) }))
+          .sort((a: any, b: any) => a.qty - b.qty);
+        for (const tier of sorted) {
+          if (tier.qty <= qty) basePrice = tier.price;
+        }
+      }
+
+      let addonTotal = 0;
+      for (const pt of row.priceTables) {
+        addonTotal += getAddonPrice(pt, qty);
+      }
+
+      return basePrice + addonTotal;
+    });
+
+    return { label: row.labels.join(' + '), prices, hasMatch: !!matchedVar };
+  });
+
+  // Filter out combos where variation doesn't exist
+  const validCombos = combos.filter((c: any) => c.hasMatch);
+
+  validCombos.sort((a: any, b: any) => a.prices[0] - b.prices[0]);
+
+  return { tiers, combos: validCombos };
+};
+
+const pricingTable = buildPricingCombinations();
+
+// Exclude 0 = no price at that tier
+const startingPrice = pricingTable.combos.length > 0
+  ? Math.min(...pricingTable.combos.flatMap((c: any) => c.prices).filter((p: number) => p > 0))
+  : null;
+
+const tierPrices = pricingTable.combos.length > 0
+  ? pricingTable.tiers.map((qty: number, i: number) => ({
+      qty,
+      price: pricingTable.combos[0].prices[i],
+    }))
+  : [];
+
+// Generate WordPress thumbnail URL at specific size
+const wpThumb = (url: string, size: number) => {
+  if (!url) return url;
+  return url.replace(/\.(jpg|jpeg|png|gif|webp)$/i, `-${size}x${size}.$1`);
+};
+
+// Generate Worker API image URL (cached on Cloudflare edge, served as WebP)
+const workerImage = (index: number) => `${WORKER_URL}/image/${slug}/${index}`;
+const workerThumb = (index: number) => `${WORKER_URL}/image/${slug}/${index}?size=thumb`;
+
+// Display-sized image for the main gallery slot. The Worker guarantees a valid response
+// here (it serves WordPress's own sized variant, or the original when none exists), so
+// this URL is safe in src/srcset without a build-time existence check - which matters
+// because ~4% of uploads are "-scaled" and have no predictably-named variant.
+const workerSized = (index: number, width: number) => `${WORKER_URL}/image/${slug}/${index}?w=${width}`;
+
+// The main image renders in a 588px box. 768 covers it at 1x; the full-resolution
+// original is offered at 2x so retina displays lose no detail.
+const MAIN_IMAGE_WIDTH = 768;
+
+// Convert image URL to WebP format (WordPress fallback)
+const toWebP = (url: string) => {
+  if (!url || url.endsWith('.webp')) return url;
+  return url + '.webp';
+};
+
+// Get gallery images - Worker cached for fast LCP, WordPress for high-quality upgrade
+const getGalleryImages = () => {
+  if (!product?.images?.length) return [];
+  return product.images.map((img: any, index: number) => {
+    // Worker API images (cached on Cloudflare edge, WebP format) - fast but 361x361
+    const workerSrc = workerImage(index);
+    const workerThumbSrc = workerThumb(index);
+
+    // WordPress full-size URL - higher quality for progressive enhancement
+    const fullSrc = img.src || img.local_src;
+
+    return {
+      src: workerSrc,           // Worker cached image (361x361) - still used by the lightbox fallback
+      srcDisplay: workerSized(index, MAIN_IMAGE_WIDTH), // Correctly-sized main image, in the HTML
+      srcFull: fullSrc,         // Full WordPress original - the 2x/lightbox source
+      srcset: '',               // Unused - the main image builds its srcset inline
+      alt: img.alt || product.name,
+      thumbnail: workerThumbSrc, // Thumbnail from Worker (fast)
+    };
+  });
+};
+
+const galleryImages = getGalleryImages();
+
+// Fetch related products (products NOT in the same categories as current product)
+// Always include promoted products first, then fill remaining slots randomly
+const promotedSlugs = ['maillot-de-football-personnalise', 'fanion-personnalise-imprime', 'claquettes-personnalisees-club'];
+let relatedProducts: any[] = [];
+if (product) {
+  try {
+    const allProductsRes = await fetch(`${WORKER_URL}/products`);
+    if (allProductsRes.ok) {
+      const allProducts = await allProductsRes.json();
+      // Get current product's category slugs
+      const currentCategories = product.categories?.map((c: any) =>
+        typeof c === 'string' ? c : c.slug
+      ) || [];
+
+      // Pick promoted products (skip if we're on that product's page)
+      const promoted = promotedSlugs
+        .filter(s => s !== slug)
+        .map(s => allProducts.find((p: any) => p.slug === s))
+        .filter(Boolean);
+
+      // Filter remaining products (not current, not promoted, not same category)
+      const otherProducts = allProducts.filter((p: any) => {
+        if (p.slug === slug) return false;
+        if (promotedSlugs.includes(p.slug)) return false;
+        const pCategories = p.categories || [];
+        const hasOverlap = pCategories.some((cat: string) => currentCategories.includes(cat));
+        return !hasOverlap;
+      });
+      const shuffled = otherProducts.sort(() => Math.random() - 0.5);
+      relatedProducts = [...promoted, ...shuffled].slice(0, 5);
+    }
+  } catch (error) {
+    console.error('Error fetching related products:', error);
+  }
+}
+
+// Generate static paths for all products
+export async function getStaticPaths() {
+  const WORKER_URL = import.meta.env.WORKER_URL || 'https://hercules-product-sync-nl-prod.gilles-86d.workers.dev';
+
+  try {
+    const response = await fetch(`${WORKER_URL}/products`);
+    const products = await response.json();
+
+    return products
+      .filter((p: any) => p.slug)
+      .map((product: any) => ({
+        params: { slug: product.slug },
+      }));
+  } catch (e) {
+    console.error('Failed to fetch products for static paths:', e);
+    return [];
+  }
+}
+
+// SEO Data
+const productUrl = `${siteConfig.siteUrl}/products/${slug}/`;
+// Per-slug SEO override (title/H1/meta + content blocks), guarded against WC renames
+const seoOverride = getProductSeoOverride(slug, product?.name);
+const productDescription = seoOverride?.metaDescription
+  ? seoOverride.metaDescription
+  : product?.short_description
+    ? truncateDescription(stripHtml(product.short_description))
+    : product?.description
+      ? truncateDescription(stripHtml(product.description))
+      : siteConfig.defaultDescription;
+
+const productImage = galleryImages[0]?.src || `${siteConfig.siteUrl}${siteConfig.defaultImage}`;
+
+// Build breadcrumb schema — prefer primary_category for consistent breadcrumbs
+const breadcrumbCat = product?.primary_category || product?.categories?.[0];
+const breadcrumbItems = [
+  { name: 'Home', url: siteConfig.siteUrl },
+];
+if (breadcrumbCat) {
+  const catName = typeof breadcrumbCat === 'string' ? breadcrumbCat : breadcrumbCat.name;
+  const catSlug = typeof breadcrumbCat === 'string' ? breadcrumbCat : breadcrumbCat.slug;
+  breadcrumbItems.push({
+    name: catName,
+    url: `${siteConfig.siteUrl}/collections/${catSlug}/`
+  });
+}
+if (product) {
+  breadcrumbItems.push({
+    name: product.name,
+    url: productUrl
+  });
+}
+
+// Fetch Google review data (scraped at build time by fetch-google-reviews.mjs)
+const placeData = await getGooglePlaceData();
+
+// Build JSON-LD schemas
+const jsonLdSchemas: object[] = [];
+
+if (product) {
+  // Product schema
+  jsonLdSchemas.push(getProductSchema({
+    name: product.name,
+    description: productDescription,
+    image: productImage,
+    url: productUrl,
+    sku: product.sku || `HERC-${product.id}`,
+    brand: siteConfig.siteName,
+    priceMin: startingPrice ?? priceRange?.min,
+    priceMax: tierPrices.length > 0 ? Math.max(...tierPrices.map((t: { price: number }) => t.price)) : priceRange?.max,
+    currency: 'EUR',
+    availability: 'InStock',
+    condition: 'NewCondition',
+    offerCount: tierPrices.length || 1,
+    priceSpecification: tierPrices.map((tp: any) => ({
+      price: tp.price,
+      quantity: tp.qty,
+    })),
+    aggregateRating: {
+      ratingValue: placeData.rating,
+      reviewCount: placeData.reviewCount,
+    },
+  }));
+
+  // Breadcrumb schema
+  jsonLdSchemas.push(getBreadcrumbSchema(breadcrumbItems));
+
+  // FAQ schema — merge WP product FAQ with cluster FAQ so the schema
+  // mirrors every question visible on the page
+  const clusterFaqForSchema = (slug && maillotClusterFaq[slug]) || [];
+  const faqSchema = getFAQSchema([...(product.faq || []), ...clusterFaqForSchema]);
+  if (faqSchema) {
+    jsonLdSchemas.push(faqSchema);
+  }
+
+}
+
+// Maillot cluster FAQ (plain HTML Q&A for SEO internal linking)
+// Schema for these questions is merged into the main FAQPage block above.
+const clusterFaq = slug ? maillotClusterFaq[slug] : undefined;
+
+// GA4 view_item payload - pushed by the script at the bottom of this page.
+// price is the "À partir de" entry price, the one the page displays.
+const ga4Item = product ? {
+  item_id: ga4ItemId(product.sku, product.id),
+  item_name: product.name,
+  item_category: breadcrumbCat?.name,
+  price: startingPrice ?? lowestTierPrice(product.variations, product.price),
+  quantity: 1,
+} : null;
+---
+
+<BaseLayout
+  title={seoOverride?.title || product?.name || 'Product'}
+  description={productDescription}
+  pageType="product"
+  ogType="product"
+  ogImage={productImage}
+  productPrice={priceRange?.min?.toString()}
+  productCurrency="EUR"
+  productAvailability="InStock"
+  jsonLd={jsonLdSchemas}
+  preloadLcpImage={galleryImages[0] ? [
+    // One preload per <picture> branch, each mirroring that branch exactly - otherwise
+    // the browser preloads one candidate and the renderer picks a different one, and
+    // the image is downloaded twice.
+    {
+      src: galleryImages[0].srcDisplay,
+      media: '(max-width: 768px)'
+    },
+    {
+      src: galleryImages[0].srcDisplay,
+      srcset: galleryImages[0].srcFull
+        ? `${galleryImages[0].srcDisplay} 1x, ${galleryImages[0].srcFull} 2x`
+        : undefined,
+      media: '(min-width: 769px)'
+    }
+  ] : undefined}
+>
+  <div class="product-page" data-ga4-item={ga4Item ? JSON.stringify(ga4Item) : undefined}>
+    {error ? (
+      <div class="error-container">
+        <h1>Product not found</h1>
+        <p>{error}</p>
+        <a href="/" class="back-link">Retour à l'accueil</a>
+      </div>
+    ) : (
+      <>
+        <!-- Breadcrumb -->
+        <nav class="breadcrumb">
+          <div class="container">
+            <a href="/">Accueil</a>
+            <span class="separator"><svg xmlns="http://www.w3.org/2000/svg" width="6" height="12" viewBox="0 0 6 12" fill="none"><path d="M6 6L0.75 11.1962L0.75 0.803848L6 6Z" fill="#469ADC"></path></svg></span>
+            {breadcrumbCat && (
+              <>
+                <a href={`/collections/${typeof breadcrumbCat === 'string' ? breadcrumbCat : breadcrumbCat.slug}/`}>{typeof breadcrumbCat === 'string' ? breadcrumbCat : breadcrumbCat.name}</a>
+                <span class="separator"><svg xmlns="http://www.w3.org/2000/svg" width="6" height="12" viewBox="0 0 6 12" fill="none"><path d="M6 6L0.75 11.1962L0.75 0.803848L6 6Z" fill="#469ADC"></path></svg></span>
+              </>
+            )}
+            <span class="current">{product.name}</span>
+          </div>
+        </nav>
+
+        <!-- Product Section -->
+        <section class="product-section">
+          <div class="container">
+            <div class="product-grid">
+              <!-- Left Column: Gallery -->
+              <div class="product-gallery">
+                <!-- Product Title wrapper - edge-to-edge border like WordPress -->
+                <div class="product-title-wrapper">
+                  <h1 class="product-title">{seoOverride?.h1 || product.name}</h1>
+                  {startingPrice && (
+                    <span class="product-starting-price" id="starting-price-badge" data-original-price={startingPrice}>À PARTIR DE {formatPrice(startingPrice)} HT</span>
+                  )}
+                </div>
+
+                {seoOverride?.introHtml && (
+                  <div class="product-seo-intro" set:html={seoOverride.introHtml} />
+                )}
+
+                <!-- Main Image Container (badges positioned inside) -->
+                <div class="main-image-container">
+                  <!-- Badges inside image container -->
+                  <div class="product-badges">
+                    {product.green_product && (
+                      <img src="/images/badges/green-option.svg?v=20260224" alt="Option durable" class="badge" />
+                    )}
+                    {product.made_in_europe && (
+                      <img src="/images/badges/made-in-europe.svg?v=20260224" alt="Fabrication UE" class="badge" />
+                    )}
+                    {product.made_in_uk && (
+                      <img src="/images/badges/made-in-uk.svg?v=20260224" alt="Fabrication UE" class="badge" />
+                    )}
+                  </div>
+
+                  <!-- Gallery Navigation Arrows -->
+                  {galleryImages.length > 1 && (
+                    <>
+                      <button class="gallery-arrow gallery-arrow-prev" id="gallery-prev" aria-label="Previous image">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                      </button>
+                      <button class="gallery-arrow gallery-arrow-next" id="gallery-next" aria-label="Next image">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                      </button>
+                    </>
+                  )}
+
+                  {/* Main Image - correctly sized in the HTML so the preload scanner can
+                      find it. 1x gets the 768px variant, 2x gets the full original.
+                      These {} comments are stripped at build; HTML comments would ship. */}
+                  <div class="main-image">
+                  <picture>
+                    {/* Phones render this image ~380 CSS px wide. Cap them at the 768px
+                        variant: x-descriptors ignore layout size, so a 2.625 DPR phone
+                        would otherwise pull the multi-MB original for a phone-sized slot.
+                        768 is still ~2x there, and sharper than the 361px this page used
+                        to ship - so mobile gains quality while losing the weight. */}
+                    <source
+                      id="main-image-mobile-source"
+                      media="(max-width: 768px)"
+                      srcset={galleryImages[0]?.srcDisplay}
+                    />
+                    <img
+                      id="main-product-image"
+                      src={galleryImages[0]?.srcDisplay || '/images/placeholder.png'}
+                      srcset={galleryImages[0]?.srcDisplay && galleryImages[0]?.srcFull
+                        ? `${galleryImages[0].srcDisplay} 1x, ${galleryImages[0].srcFull} 2x`
+                        : undefined}
+                      alt={product.name}
+                      loading="eager"
+                      fetchpriority="high"
+                      width="600"
+                      height="600"
+                    />
+                  </picture>
+                  </div>
+                </div>
+
+                <!-- Thumbnails Gallery with Pagination -->
+                <!-- Show thumbnails even with 1 image so users see the gallery section -->
+                {galleryImages.length >= 1 && (
+                  <div class="thumbnail-gallery" id="thumbnail-gallery">
+                    <ul class="thumbnail-list">
+                      {galleryImages.map((img, index) => (
+                        <li class={`thumbnail-item ${index === 0 ? 'active' : ''}`} style={index >= 20 ? 'display: none;' : ''}>
+                          <img
+                            src={img.thumbnail}
+                            alt={img.alt}
+                            loading={index === 0 ? 'eager' : 'lazy'}
+                            decoding="async"
+                            width="100"
+                            height="100"
+                            data-full-src={img.src}
+                            data-full-srcset={img.srcset}
+                            data-display-src={img.srcDisplay}
+                            data-original-src={img.srcFull}
+                            data-index={index}
+                          />
+                        </li>
+                      ))}
+                    </ul>
+                    <!-- Pagination Controls -->
+                    {galleryImages.length > 20 && (
+                      <div class="thumbnail-controls">
+                        <button class="kd-go-back-btn" id="thumb-back" style="display: none;">Retour</button>
+                        <button class="kd-show-more-btn" id="thumb-more">Voir plus</button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <!-- Right Column: Product Configurator Only -->
+              <div class="product-info">
+                <!-- Product Configurator (Pearl WC Steps) -->
+                <ProductConfigurator
+                  productSlug={slug as string}
+                  workerUrl={WORKER_URL}
+                  productSku={product.sku}
+                  productCategory={breadcrumbCat?.name}
+                  client:idle
+                />
+
+              </div>
+            </div>
+
+            <!-- Tabbed Section: Description / Prix / Design (CSS-only, no JS required) -->
+            <div class="product-tabs-section" id="product-tabs">
+              <!-- Hidden radio inputs for CSS-only tab switching -->
+              <input type="radio" name="product-tab" id="radio-description" class="tab-radio" checked />
+              <input type="radio" name="product-tab" id="radio-prices" class="tab-radio" />
+              <input type="radio" name="product-tab" id="radio-design" class="tab-radio" />
+
+              <div class="product-tabs-bar">
+                <label for="radio-description" class="product-tab">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                  Description du produit
+                </label>
+                <label for="radio-prices" class="product-tab">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                  Prix
+                </label>
+                <label for="radio-design" class="product-tab">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+                  Design
+                </label>
+              </div>
+
+              <!-- Tab 1: Description du produit -->
+              <div class="product-tab-content" id="tab-description">
+                <div class="description-content" set:html={normalizeInternalLinks(product.description)} />
+              </div>
+
+              <!-- Tab 2: Prix -->
+              <div class="product-tab-content" id="tab-prices">
+                <div class="prices-tab-layout">
+                  <div class="prices-tab-sidebar">
+                    <div class="prices-sidebar-card">
+                      <div class="prices-info-row">
+                        <div class="prices-info-icon">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10C99E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        </div>
+                        <div class="prices-info-text">
+                          <strong>TOUS LES PRIX INCLUENT</strong>
+                          <p>conception, production, emballage, contrôle qualité et envoi.</p>
+                        </div>
+                      </div>
+
+                      <div class="prices-info-row">
+                        <div class="prices-info-icon">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10C99E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        </div>
+                        <div class="prices-info-text">
+                          <strong>DÉLAI DE PRODUCTION</strong>
+                          <p>{leadTime ? `Env. ${leadTime}` : 'Contactez-nous pour le délai'}</p>
+                        </div>
+                      </div>
+
+                      <div class="prices-info-row">
+                        <div class="prices-info-icon">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10C99E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        </div>
+                        <div class="prices-info-text">
+                          <strong>BESOIN D'AIDE ?</strong>
+                          <p>Contactez notre équipe pour un devis personnalisé.</p>
+                        </div>
+                      </div>
+
+                      <div class="prices-info-buttons">
+                        <div class="prices-info-btn-wrapper">
+                          <ContactFormPopup
+                            triggerType="button"
+                            triggerText="CONTACTEZ-NOUS"
+                            client:visible
+                          />
+                        </div>
+                        <a href="#faq" class="prices-info-btn prices-info-btn-outline">VOIR LA FAQ</a>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="prices-tab-table">
+                    {pricingTable.combos.length > 0 ? (
+                      <>
+                        <h3 class="tier-pricing-title">Prix dégressifs <span class="price-tax-note">(tous les prix sont HT)</span></h3>
+
+                        <!-- 1. "CONFIGURATION" heading (mobile only) -->
+                        <p class="pricing-config-heading">Configuration</p>
+
+                        <!-- 2. Scroll indicator with clickable arrows (mobile only) -->
+                        <div class="pricing-scroll-indicator">
+                          <button class="pricing-scroll-btn pricing-scroll-btn-left" aria-label="Défiler à gauche">&#8592;</button>
+                          <span class="pricing-scroll-text">Faites défiler pour voir plus de prix</span>
+                          <button class="pricing-scroll-btn pricing-scroll-btn-right" aria-label="Défiler à droite">&#8594;</button>
+                        </div>
+
+                        <!-- 3. Table -->
+                        <div class="tier-pricing-table-wrapper">
+                          <table class="tier-pricing-table">
+                            <thead>
+                              <tr>
+                                <th><span class="th-desktop">Configuration</span><span class="th-mobile">OPTIONS</span></th>
+                                {pricingTable.tiers.map((qty: number) => (
+                                  <th>{qty}+</th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {pricingTable.combos.map((combo: any, idx: number) => (
+                                <tr>
+                                  <td class="combo-label">{combo.label}</td>
+                                  {combo.prices.map((price: number) => (
+                                    <td class="combo-price distributor-price-cell" data-original-price={price}>{price > 0 ? formatPrice(price) : '—'}</td>
+                                  ))}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+
+                        <!-- 4. Bottom scroll hint (mobile only) -->
+                        <div class="pricing-scroll-bottom-hint">
+                          <svg class="pricing-hint-hand" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#253461"><path d="M6.9 20.6a4.97 4.97 0 0 1-1.4-3.5c0-.28.04-.55.1-.82L4.36 12.8a1.5 1.5 0 0 1 2.68-1.36L8 13.16V4.5a1.5 1.5 0 0 1 3 0v5h.25V3.5a1.5 1.5 0 0 1 3 0v6h.25V4.5a1.5 1.5 0 0 1 3 0V10h.25V7a1.5 1.5 0 0 1 3 0v10a7 7 0 0 1-7 7h-1A6.97 6.97 0 0 1 6.9 20.6z"/></svg>
+                          <span>Faites défiler horizontalement<br/>pour voir toutes les options</span>
+                        </div>
+
+                        <!-- 5. Footnote (mobile only) -->
+                        <p class="pricing-mobile-footnote">* Tous les prix sont HT</p>
+                      </>
+                    ) : (
+                      <p class="no-pricing-message">Les informations de prix ne sont pas disponibles pour ce produit. Veuillez nous contacter pour un devis.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tab 3: Design -->
+              <div class="product-tab-content" id="tab-design">
+                <div class="design-tab-header">
+                  <h3 class="design-tab-title">
+                    Comment obtenir <span class="highlight">un Design ?</span>
+                  </h3>
+                  <p class="design-tab-description">
+                    Nous avons notre propre équipe de graphistes, chacun avec sa spécialité et son style unique. Nous pouvons ainsi créer rapidement un design qui correspond parfaitement à vos besoins et à votre vision.
+                  </p>
+                  <div class="design-tab-cta">
+                    <ContactFormPopup
+                      triggerType="button"
+                      triggerText="Demandez votre design gratuit"
+                      client:visible
+                    />
+                  </div>
+                </div>
+
+                <div class="design-tab-options">
+                  {product.pdf_url && (
+                    <div class="design-tab-card">
+                      <div class="design-tab-card-icon">
+                        <!-- Wand + stars icon -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="24" viewBox="0 0 59 52" fill="none"><path d="M4.37229 8.66667C4.37229 8.09203 4.6025 7.54093 5.01229 7.1346C5.42208 6.72827 5.97787 6.5 6.5574 6.5H10.9276V2.16667C10.9276 1.59203 11.1578 1.04093 11.5676 0.634602C11.9774 0.228274 12.5332 0 13.1127 0C13.6922 0 14.248 0.228274 14.6578 0.634602C15.0676 1.04093 15.2978 1.59203 15.2978 2.16667V6.5H19.668C20.2476 6.5 20.8034 6.72827 21.2132 7.1346C21.6229 7.54093 21.8532 8.09203 21.8532 8.66667C21.8532 9.2413 21.6229 9.7924 21.2132 10.1987C20.8034 10.6051 20.2476 10.8333 19.668 10.8333H15.2978V15.1667C15.2978 15.7413 15.0676 16.2924 14.6578 16.6987C14.248 17.1051 13.6922 17.3333 13.1127 17.3333C12.5332 17.3333 11.9774 17.1051 11.5676 16.6987C11.1578 16.2924 10.9276 15.7413 10.9276 15.1667V10.8333H6.5574C5.97787 10.8333 5.42208 10.6051 5.01229 10.1987C4.6025 9.7924 4.37229 9.2413 4.37229 8.66667ZM41.5191 43.3333H39.334V41.1667C39.334 40.592 39.1038 40.0409 38.694 39.6346C38.2842 39.2283 37.7284 39 37.1489 39C36.5694 39 36.0136 39.2283 35.6038 39.6346C35.194 40.0409 34.9638 40.592 34.9638 41.1667V43.3333H32.7787C32.1992 43.3333 31.6434 43.5616 31.2336 43.9679C30.8238 44.3743 30.5936 44.9254 30.5936 45.5C30.5936 46.0746 30.8238 46.6257 31.2336 47.0321C31.6434 47.4384 32.1992 47.6667 32.7787 47.6667H34.9638V49.8333C34.9638 50.408 35.194 50.9591 35.6038 51.3654C36.0136 51.7717 36.5694 52 37.1489 52C37.7284 52 38.2842 51.7717 38.694 51.3654C39.1038 50.9591 39.334 50.408 39.334 49.8333V47.6667H41.5191C42.0987 47.6667 42.6544 47.4384 43.0642 47.0321C43.474 46.6257 43.7042 46.0746 43.7042 45.5C43.7042 44.9254 43.474 44.3743 43.0642 43.9679C42.6544 43.5616 42.0987 43.3333 41.5191 43.3333ZM56.8149 30.3333H52.4447V26C52.4447 25.4254 52.2145 24.8743 51.8047 24.4679C51.3949 24.0616 50.8391 23.8333 50.2596 23.8333C49.68 23.8333 49.1242 24.0616 48.7145 24.4679C48.3047 24.8743 48.0745 25.4254 48.0745 26V30.3333H43.7042C43.1247 30.3333 42.5689 30.5616 42.1591 30.9679C41.7493 31.3743 41.5191 31.9254 41.5191 32.5C41.5191 33.0746 41.7493 33.6257 42.1591 34.0321C42.5689 34.4384 43.1247 34.6667 43.7042 34.6667H48.0745V39C48.0745 39.5746 48.3047 40.1257 48.7145 40.5321C49.1242 40.9384 49.68 41.1667 50.2596 41.1667C50.8391 41.1667 51.3949 40.9384 51.8047 40.5321C52.2145 40.1257 52.4447 39.5746 52.4447 39V34.6667H56.8149C57.3944 34.6667 57.9502 34.4384 58.36 34.0321C58.7698 33.6257 59 33.0746 59 32.5C59 31.9254 58.7698 31.3743 58.36 30.9679C57.9502 30.5616 57.3944 30.3333 56.8149 30.3333ZM51.1637 13L13.1127 50.7298C12.2932 51.5418 11.1821 51.998 10.0235 51.998C8.86497 51.998 7.75382 51.5418 6.93433 50.7298L1.28036 45.129C0.874442 44.7266 0.552445 44.2488 0.332758 43.723C0.113072 43.1972 0 42.6336 0 42.0645C0 41.4953 0.113072 40.9318 0.332758 40.406C0.552445 39.8801 0.874442 39.4024 1.28036 39L39.334 1.27021C39.7398 0.867716 40.2217 0.548437 40.7519 0.330605C41.2822 0.112773 41.8506 0.000655015 42.4246 0.000655015C42.9986 0.000655015 43.5669 0.112773 44.0972 0.330605C44.6275 0.548437 45.1093 0.867716 45.5151 1.27021L51.1637 6.87104C51.5696 7.27344 51.8916 7.75119 52.1113 8.277C52.3309 8.80281 52.444 9.36638 52.444 9.93552C52.444 10.5047 52.3309 11.0682 52.1113 11.594C51.8916 12.1199 51.5696 12.5976 51.1637 13ZM36.2421 21.6667L30.5936 16.0631L4.37229 42.0631L10.0208 47.6667L36.2421 21.6667ZM48.0745 9.93688L42.4232 4.33333L33.6828 13L39.334 18.6035L48.0745 9.93688Z" fill="white"></path></svg>
+                      </div>
+                      <div class="design-tab-card-text">
+                        <strong>Télécharger les exemples</strong>
+                        <p>Choisissez jusqu'à 4 options parmi les exemples. Envoyez-nous votre logo, texte et couleurs.</p>
+                      </div>
+                      <a href={product.pdf_url} target="_blank" rel="noopener noreferrer" class="design-tab-card-btn">Télécharger les exemples</a>
+                    </div>
+                  )}
+
+                  {product.pdf_2_url && (
+                    <div class="design-tab-card">
+                      <div class="design-tab-card-icon">
+                        <!-- Paint palette icon -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="26" height="24" viewBox="0 0 54 52" fill="none"><path d="M45.8914 7.77177C40.8646 2.78626 34.074 -0.00724933 26.9995 1.41289e-05H26.7217C19.6093 0.0733075 12.813 2.95461 7.80952 8.01791C2.80605 13.0812 -0.000376428 19.9174 3.78708e-08 27.0413C3.78708e-08 38.2218 6.90046 47.5978 18.0066 51.5266C19.2593 51.9689 20.5995 52.104 21.9151 51.9204C23.2306 51.7369 24.483 51.2401 25.5672 50.4718C26.6515 49.7034 27.536 48.6859 28.1466 47.5045C28.7572 46.3231 29.076 45.0123 29.0764 43.682C29.0764 42.5787 29.514 41.5205 30.293 40.7403C31.072 39.9602 32.1285 39.5218 33.2302 39.5218H45.2268C47.1113 39.531 48.9422 38.8943 50.4156 37.7176C51.8889 36.5409 52.9161 34.8948 53.3267 33.0527C53.7909 31.0057 54.0165 28.9116 53.9991 26.8125C53.9726 23.2593 53.2424 19.7467 51.8506 16.4783C50.4589 13.2098 48.4334 10.2505 45.8914 7.77177ZM49.2664 32.1375C49.0601 33.0552 48.5473 33.8749 47.8128 34.4612C47.0783 35.0474 46.166 35.3651 45.2268 35.3617H33.2302C31.0269 35.3617 28.9138 36.2383 27.3559 37.7986C25.7979 39.359 24.9226 41.4753 24.9226 43.682C24.9217 44.3465 24.7618 45.0011 24.4564 45.591C24.151 46.181 23.7089 46.689 23.1672 47.0727C22.6255 47.4564 21.9999 47.7045 21.3428 47.7963C20.6857 47.8881 20.0162 47.8209 19.3903 47.6004C9.99242 44.2801 4.15377 36.4017 4.15377 27.0413C4.15345 21.0136 6.52795 15.2293 10.7614 10.945C14.9948 6.6607 20.7452 4.22254 26.7633 4.16021H26.9969C33.0152 4.18362 38.7832 6.57514 43.0569 10.819C47.3307 15.0629 49.7678 20.8191 49.8427 26.8463C49.8581 28.6259 49.6682 30.4015 49.2767 32.1375H49.2664ZM30.1149 13.5206C30.1149 14.1377 29.9321 14.741 29.5898 15.2541C29.2475 15.7672 28.761 16.1671 28.1917 16.4033C27.6225 16.6394 26.9961 16.7012 26.3918 16.5808C25.7874 16.4604 25.2323 16.1633 24.7967 15.7269C24.361 15.2906 24.0643 14.7346 23.9441 14.1294C23.8239 13.5241 23.8855 12.8967 24.1213 12.3266C24.3571 11.7565 24.7564 11.2692 25.2687 10.9263C25.7811 10.5835 26.3834 10.4005 26.9995 10.4005C27.8258 10.4005 28.6182 10.7292 29.2024 11.3144C29.7866 11.8995 30.1149 12.6931 30.1149 13.5206ZM18.692 19.7609C18.692 20.378 18.5093 20.9813 18.167 21.4944C17.8246 22.0075 17.3381 22.4074 16.7688 22.6436C16.1996 22.8797 15.5732 22.9415 14.9689 22.8211C14.3646 22.7007 13.8095 22.4036 13.3738 21.9672C12.9381 21.5308 12.6414 20.9749 12.5212 20.3696C12.401 19.7644 12.4627 19.137 12.6985 18.5669C12.9343 17.9968 13.3336 17.5095 13.8459 17.1666C14.3582 16.8238 14.9605 16.6408 15.5767 16.6408C16.4029 16.6408 17.1953 16.9695 17.7795 17.5547C18.3638 18.1398 18.692 18.9334 18.692 19.7609ZM18.692 34.3216C18.692 34.9387 18.5093 35.542 18.167 36.0551C17.8246 36.5682 17.3381 36.9681 16.7688 37.2042C16.1996 37.4404 15.5732 37.5022 14.9689 37.3818C14.3646 37.2614 13.8095 36.9642 13.3738 36.5279C12.9381 36.0915 12.6414 35.5356 12.5212 34.9303C12.401 34.3251 12.4627 33.6977 12.6985 33.1276C12.9343 32.5574 13.3336 32.0701 13.8459 31.7273C14.3582 31.3845 14.9605 31.2015 15.5767 31.2015C16.4029 31.2015 17.1953 31.5302 17.7795 32.1153C18.3638 32.7005 18.692 33.4941 18.692 34.3216ZM41.5377 19.7609C41.5377 20.378 41.355 20.9813 41.0127 21.4944C40.6704 22.0075 40.1838 22.4074 39.6146 22.6436C39.0453 22.8797 38.419 22.9415 37.8146 22.8211C37.2103 22.7007 36.6552 22.4036 36.2195 21.9672C35.7839 21.5308 35.4871 20.9749 35.3669 20.3696C35.2467 19.7644 35.3084 19.137 35.5442 18.5669C35.78 17.9968 36.1793 17.5095 36.6916 17.1666C37.2039 16.8238 37.8063 16.6408 38.4224 16.6408C39.2486 16.6408 40.041 16.9695 40.6253 17.5547C41.2095 18.1398 41.5377 18.9334 41.5377 19.7609Z" fill="white"></path></svg>
+                      </div>
+                      <div class="design-tab-card-text">
+                        <strong>Télécharger le gabarit</strong>
+                        <p>Créez votre propre design. Téléchargez le gabarit et soumettez votre création.</p>
+                      </div>
+                      <a href={product.pdf_2_url} target="_blank" rel="noopener noreferrer" class="design-tab-card-btn">Télécharger les gabarits PDF</a>
+                    </div>
+                  )}
+
+                  <div class="design-tab-card">
+                    <div class="design-tab-card-icon">
+                      <!-- Pencil/edit icon -->
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 52 52" fill="none"><path d="M50.7813 12.8357L39.1623 1.21879C38.776 0.832389 38.3174 0.525877 37.8127 0.316756C37.3079 0.107634 36.7669 0 36.2205 0C35.6742 0 35.1332 0.107634 34.6284 0.316756C34.1237 0.525877 33.665 0.832389 33.2787 1.21879L1.21937 33.2798C0.831416 33.6647 0.523832 34.1228 0.314503 34.6277C0.105173 35.1325 -0.00172488 35.6739 2.10461e-05 36.2204V47.8399C2.10461e-05 48.9432 0.438289 50.0014 1.21841 50.7815C1.99853 51.5617 3.0566 52 4.15986 52H15.7788C16.3253 52.0017 16.8667 51.8948 17.3715 51.6855C17.8763 51.4761 18.3344 51.1685 18.7193 50.7806L40.4727 29.0287L41.3774 32.6428L31.8098 42.2083C31.4195 42.5982 31.2001 43.1272 31.1999 43.679C31.1996 44.2307 31.4186 44.7599 31.8085 45.1502C32.1984 45.5405 32.7274 45.7599 33.2791 45.7601C33.8308 45.7604 34.36 45.5415 34.7503 45.1515L45.1499 34.7514C45.4042 34.4975 45.5885 34.182 45.6846 33.8357C45.7808 33.4894 45.7855 33.1241 45.6985 32.7754L43.9045 25.5967L50.7813 18.7196C51.1677 18.3333 51.4741 17.8746 51.6833 17.3699C51.8924 16.8651 52 16.324 52 15.7777C52 15.2313 51.8924 14.6902 51.6833 14.1855C51.4741 13.6807 51.1677 13.222 50.7813 12.8357ZM4.15986 40.3804L11.619 47.8399H4.15986V40.3804ZM16.6394 46.9793L5.02043 35.3598L27.039 13.3401L38.6579 24.9597L16.6394 46.9793ZM41.5984 22.019L29.9821 10.3995L36.2218 4.15942L47.8382 15.779L41.5984 22.019Z" fill="white"></path></svg>
+                    </div>
+                    <div class="design-tab-card-text">
+                      <strong>Envoyer votre design</strong>
+                      <p>Envoyez-nous votre design ou votre demande de design.</p>
+                    </div>
+                    <div class="design-tab-card-btn-wrapper">
+                      <ContactFormPopup
+                        triggerType="button"
+                        triggerText="Formulaire de contact"
+                        client:visible
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- FAQ Section - Card style like product description -->
+        {product.faq && product.faq.length > 0 && (
+          <section id="faq" class="faq-section">
+            <div class="container">
+              <div class="faq-card">
+                <div class="faq-header">
+                  <!-- Stacked layers icon from WordPress -->
+                  <svg class="faq-title-icon" xmlns="http://www.w3.org/2000/svg" width="40" height="44" viewBox="0 0 40 44" fill="none">
+                    <path d="M39.7673 30.6429C39.9704 31.0031 40.0256 31.4308 39.9207 31.8325C39.8159 32.2342 39.5597 32.577 39.208 32.786L20.7572 43.786C20.5221 43.9262 20.2548 44 19.9826 44C19.7105 44 19.4432 43.9262 19.2081 43.786L0.757253 32.786C0.410712 32.5731 0.160134 32.2294 0.0597732 31.8291C-0.0405878 31.4288 0.0173444 31.0043 0.221027 30.6473C0.424709 30.2904 0.75775 30.0298 1.14804 29.922C1.53834 29.8142 1.95447 29.8678 2.30636 30.0713L19.9884 40.6098L37.6705 30.0713C38.0229 29.8638 38.4414 29.8074 38.8344 29.9145C39.2274 30.0216 39.5629 30.2836 39.7673 30.6429ZM37.6705 20.6427L19.9884 31.1811L2.30636 20.6427C1.95626 20.4645 1.5529 20.4294 1.17837 20.5445C0.803835 20.6596 0.486288 20.9162 0.290356 21.2621C0.0944252 21.608 0.0348365 22.0173 0.123719 22.4065C0.2126 22.7958 0.443273 23.1358 0.768785 23.3573L19.2196 34.3574C19.4547 34.4975 19.722 34.5714 19.9942 34.5714C20.2663 34.5714 20.5336 34.4975 20.7687 34.3574L39.2196 23.3573C39.3968 23.2549 39.5523 23.1174 39.6772 22.953C39.802 22.7886 39.8936 22.6005 39.9467 22.3996C39.9999 22.1987 40.0134 21.9891 39.9866 21.7828C39.9598 21.5765 39.8932 21.3777 39.7906 21.1979C39.688 21.0182 39.5516 20.861 39.3891 20.7356C39.2266 20.6102 39.0414 20.519 38.8441 20.4674C38.6469 20.4157 38.4416 20.4046 38.2401 20.4347C38.0386 20.4648 37.845 20.5355 37.6705 20.6427ZM0 12.5714C0.000613186 12.2961 0.0719491 12.0259 0.206868 11.7877C0.341788 11.5495 0.535558 11.3516 0.768785 11.214L19.2196 0.213952C19.4547 0.0738314 19.722 0 19.9942 0C20.2663 0 20.5336 0.0738314 20.7687 0.213952L39.2196 11.214C39.4517 11.3524 39.6442 11.5506 39.7781 11.7887C39.9119 12.0269 39.9823 12.2967 39.9823 12.5714C39.9823 12.846 39.9119 13.1158 39.7781 13.354C39.6442 13.5921 39.4517 13.7903 39.2196 13.9287L20.7687 24.9288C20.5336 25.0689 20.2663 25.1427 19.9942 25.1427C19.722 25.1427 19.4547 25.0689 19.2196 24.9288L0.768785 13.9287C0.535558 13.7911 0.341788 13.5933 0.206868 13.3551C0.0719491 13.1168 0.000613186 12.8466 0 12.5714ZM4.58965 12.5714L19.9884 21.7525L35.3872 12.5714L19.9884 3.39022L4.58965 12.5714Z" fill="#253461"/>
+                  </svg>
+                  <h2 class="faq-title">Questions <span class="highlight">Fréquentes</span></h2>
+                </div>
+                <div class="faq-accordion">
+                  {product.faq.map((item: { question: string; answer: string }, index: number) => (
+                    <details class="faq-item" data-faq-index={index}>
+                      <summary class="faq-question">
+                        <span>{item.question}</span>
+                        <!-- Plus icon (collapsed state) -->
+                        <svg class="faq-icon faq-icon-plus" xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 30 30" fill="none">
+                          <path d="M15.7143 14.2857H20.7143C21.1088 14.2857 21.4286 14.6055 21.4286 15C21.4286 15.3945 21.1088 15.7143 20.7143 15.7143H15.7143V20.7143C15.7143 21.1088 15.3945 21.4286 15 21.4286C14.6055 21.4286 14.2857 21.1088 14.2857 20.7143V15.7143H9.28571C8.89123 15.7143 8.57143 15.3945 8.57143 15C8.57143 14.6055 8.89123 14.2857 9.28571 14.2857H14.2857V9.28571C14.2857 8.89123 14.6055 8.57143 15 8.57143C15.3945 8.57143 15.7143 8.89123 15.7143 9.28571V14.2857ZM15 30C6.71573 30 0 23.2843 0 15C0 6.71573 6.71573 0 15 0C23.2843 0 30 6.71573 30 15C30 23.2843 23.2843 30 15 30ZM15 28.5714C22.4953 28.5714 28.5714 22.4953 28.5714 15C28.5714 7.50471 22.4953 1.42857 15 1.42857C7.50471 1.42857 1.42857 7.50471 1.42857 15C1.42857 22.4953 7.50471 28.5714 15 28.5714Z" fill="#469ADC"/>
+                        </svg>
+                        <!-- Minus icon (expanded state) -->
+                        <svg class="faq-icon faq-icon-minus" xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 30 30" fill="none">
+                          <path d="M20.7143 14.2857C21.1088 14.2857 21.4286 14.6055 21.4286 15C21.4286 15.3945 21.1088 15.7143 20.7143 15.7143H9.28571C8.89123 15.7143 8.57143 15.3945 8.57143 15C8.57143 14.6055 8.89123 14.2857 9.28571 14.2857H20.7143ZM15 30C6.71573 30 0 23.2843 0 15C0 6.71573 6.71573 0 15 0C23.2843 0 30 6.71573 30 15C30 23.2843 23.2843 30 15 30ZM15 28.5714C22.4953 28.5714 28.5714 22.4953 28.5714 15C28.5714 7.50471 22.4953 1.42857 15 1.42857C7.50471 1.42857 1.42857 7.50471 1.42857 15C1.42857 22.4953 7.50471 28.5714 15 28.5714Z" fill="#469ADC"/>
+                        </svg>
+                      </summary>
+                      <div class="faq-answer">
+                        <div class="faq-answer-content" set:html={normalizeInternalLinks(item.answer)}></div>
+                      </div>
+                    </details>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        <!-- Maillot Cluster FAQ - Plain HTML for SEO internal linking -->
+        {clusterFaq && clusterFaq.length > 0 && (
+          <section class="cluster-faq-section">
+            <div class="cluster-faq-wrap">
+              <div class="cluster-faq-card">
+                <div class="cluster-faq-header">
+                  <h2 class="cluster-faq-title">Plus de <span class="highlight">Questions</span></h2>
+                </div>
+                {clusterFaq.map((item) => (
+                  <div class="cluster-faq-item">
+                    <h3>{item.question}</h3>
+                    <div class="cluster-faq-answer">
+                      <Fragment set:html={item.answer} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {seoOverride?.seoBlockHtml && (
+          <section class="product-seo-block">
+            <div class="container">
+              <div class="product-seo-block-inner" set:html={seoOverride.seoBlockHtml} />
+            </div>
+          </section>
+        )}
+
+        <!-- Related Products Section - "Other customers also liked these products" -->
+        {relatedProducts.length > 0 && (
+          <section class="related-products-section">
+            <div class="related-products-container">
+              <h2 class="related-heading">
+                D'autres clients ont aussi aimé <span class="highlight">ces produits</span>
+              </h2>
+              <ul class="related-products">
+                {relatedProducts.map((relProduct: any) => (
+                  <li class="related-product-item">
+                    <a href={`/products/${relProduct.slug}/`} class="related-product-link">
+                      <img
+                        src={`${WORKER_URL}/image/${relProduct.slug}/0`}
+                        alt={relProduct.name}
+                        loading="lazy"
+                        decoding="async"
+                        width="361"
+                        height="361"
+                      />
+                      <h3 class="related-product-title">{relProduct.name}</h3>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
+        )}
+
+        <!-- Customer Reviews Section - "What Customers Say About Us" -->
+        <section class="reviews-section">
+          <div class="container">
+            <h2 class="reviews-heading">
+              Ce que disent <span class="highlight">nos clients</span>
+            </h2>
+            <!-- TrustIndex Widget - Same widget ID as WordPress, logo replaced with Google -->
+            <div class="reviews-widget" id="trustindex-widget-product"></div>
+          </div>
+        </section>
+
+        <!-- Lightbox Modal -->
+        <div id="lightbox" class="lightbox" aria-hidden="true">
+          <div class="lightbox-backdrop"></div>
+          <div class="lightbox-content">
+            <button class="lightbox-close" aria-label="Close">&times;</button>
+            <button class="lightbox-nav lightbox-prev" aria-label="Previous image">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
+            <div class="lightbox-image-container">
+              <img id="lightbox-image" src="" alt="" />
+            </div>
+            <button class="lightbox-nav lightbox-next" aria-label="Next image">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
+            <div class="lightbox-counter">
+              <span id="lightbox-current">1</span> / <span id="lightbox-total">{galleryImages.length}</span>
+            </div>
+          </div>
+        </div>
+      </>
+    )}
+  </div>
+
+  <!-- Trust Logos Section -->
+  <TrustLogos />
+</BaseLayout>
+
+<style>
+  .product-page {
+    background: #FAFAFA;
+    min-height: 100vh;
+  }
+
+  .container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0;
+  }
+
+  .error-container {
+    text-align: center;
+    padding: 100px 20px;
+  }
+
+  .error-container h1 {
+    color: #253461;
+    margin-bottom: 15px;
+  }
+
+  .back-link {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 12px 30px;
+    background: #469ADC;
+    color: white;
+    text-decoration: none;
+    border-radius: 50px;
+  }
+
+  /* Breadcrumb - Matching WordPress EAEL styling */
+  .breadcrumb {
+    background: #FAFAFA;
+    padding: 28px 0 5px;
+  }
+
+  .breadcrumb .container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Jost', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+  }
+
+  .breadcrumb a {
+    color: rgb(95, 95, 95);
+    font-size: 14px;
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  .breadcrumb a:hover {
+    color: #469ADC;
+  }
+
+  .breadcrumb .separator {
+    display: inline-flex;
+    align-items: center;
+    margin: 0 2px;
+  }
+
+  .breadcrumb .separator svg {
+    width: 6px;
+    height: 12px;
+  }
+
+  .breadcrumb .current {
+    color: #469ADC;
+  }
+
+  /* Product Section */
+  .product-section {
+    padding: 20px 0;
+  }
+
+  .product-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: start; /* Prevent columns from stretching to match each other */
+  }
+
+  @media (max-width: 900px) {
+    .container {
+      padding: 0 15px;
+    }
+    .product-grid {
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+  }
+
+  /* Gallery - WordPress kd-white-container style */
+  .product-gallery {
+    min-width: 0; /* Prevent grid blowout from thumbnail gallery */
+    max-width: 100%;
+    overflow: hidden;
+    background: white;
+    padding: 20px;
+    border-radius: 20px;
+    border: 1px solid #DCDCDC;
+    align-self: start; /* Don't stretch to match right column height */
+    height: fit-content; /* Force content-based height */
+  }
+
+  /* Main image container - holds image and badges */
+  .main-image-container {
+    position: relative;
+  }
+
+  .product-badges {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .product-badges .badge {
+    width: 50px;
+    height: auto;
+  }
+
+  .main-image {
+    background: transparent;
+    border-radius: 15px;
+    overflow: hidden;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .main-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  /* Gallery Navigation Arrows */
+  .gallery-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 15;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.9);
+    border: 1px solid #dcdcdc;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    color: #253461;
+  }
+
+  .gallery-arrow:hover {
+    background-color: #253461;
+    color: white;
+    border-color: #253461;
+  }
+
+  .gallery-arrow-prev {
+    left: 10px;
+  }
+
+  .gallery-arrow-next {
+    right: 10px;
+  }
+
+  .gallery-arrow svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  @media (max-width: 768px) {
+    .gallery-arrow {
+      width: 32px;
+      height: 32px;
+    }
+
+    .gallery-arrow svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .gallery-arrow-prev {
+      left: 5px;
+    }
+
+    .gallery-arrow-next {
+      right: 5px;
+    }
+  }
+
+  /* Thumbnail Gallery - WordPress/WooCommerce style */
+  .thumbnail-gallery {
+    margin-top: 1em;
+    padding-top: 1em;
+    overflow: hidden;
+    max-width: 100%;
+  }
+
+  .thumbnail-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 10px;
+  }
+
+  .thumbnail-item {
+    width: calc(18.5% - 8px);
+    float: left;
+    margin: 0;
+    padding: 5px;
+    list-style: none;
+    background: #e6e6e6;
+    border-radius: 15px;
+    box-sizing: border-box;
+  }
+
+  .thumbnail-item img {
+    width: 94px;
+    height: 94px;
+    display: block;
+    margin: 0;
+    cursor: pointer;
+    filter: blur(1px);
+    opacity: 0.7;
+    transition: filter 0.2s, opacity 0.2s;
+    object-fit: cover;
+    border-radius: 10px;
+  }
+
+  .thumbnail-item:hover img,
+  .thumbnail-item.active img {
+    filter: blur(0);
+    opacity: 1;
+  }
+
+  /* Active thumbnail border - WordPress kd-active style */
+  .thumbnail-item.active {
+    border: 2px solid #469ADC;
+  }
+
+  /* Mobile responsive - 4 thumbnails per row filling full width */
+  @media only screen and (max-width: 768px) {
+    .thumbnail-item {
+      width: calc(25% - 7.5px);
+    }
+
+    .thumbnail-item img {
+      width: 100%;
+      height: auto;
+    }
+  }
+
+  /* Pagination Controls - WordPress style */
+  .thumbnail-controls {
+    margin-top: 10px;
+    overflow: hidden;
+  }
+
+  .thumbnail-controls::after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+
+  .kd-show-more-btn,
+  .kd-go-back-btn {
+    margin: 10px;
+    color: #253461;
+    padding: 0;
+    border: none;
+    font-family: 'Jost', sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    background: transparent;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+
+  .kd-show-more-btn {
+    float: right;
+  }
+
+  .kd-go-back-btn {
+    float: left;
+  }
+
+  .kd-show-more-btn:hover,
+  .kd-go-back-btn:hover,
+  .kd-show-more-btn:focus,
+  .kd-go-back-btn:focus {
+    color: #469ADC;
+    background: transparent;
+  }
+
+  /* Product Info - Right column for configurator only */
+  .product-info {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-width: 0; /* Prevent grid blowout */
+    height: fit-content;
+    min-height: 500px; /* Reserve space to prevent CLS during hydration */
+  }
+
+  /* Product Title Wrapper - Edge-to-edge border like WordPress */
+  .product-title-wrapper {
+    margin: -20px -20px 20px -20px; /* Extend to gallery edges */
+    padding: 20px 21px 15px 21px; /* Match configurator header padding */
+    border-bottom: 1px solid #DCDCDC;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 62px;
+    box-sizing: border-box;
+  }
+
+  /* Product Title - Inside gallery box */
+  .product-title {
+    font-family: 'Jost', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 15px;
+    color: #253461;
+    margin: 0;
+    text-transform: uppercase;
+  }
+
+  .product-starting-price {
+    margin: 0;
+    font-family: 'Jost', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 100%;
+    color: #10C99E;
+    white-space: nowrap;
+    flex-shrink: 0;
+    background-color: white;
+    border: 1.5px solid #10C99E;
+    border-radius: 50px;
+    padding: 5px 14px;
+    text-transform: uppercase;
+  }
+
+  .price-tax-note {
+    font-size: 12px;
+    font-weight: 400;
+    color: #888;
+  }
+
+  /* Product Tabs Section */
+  .product-tabs-section {
+    margin-top: 40px;
+  }
+
+  /* Hidden radio inputs for CSS-only tab switching */
+  .tab-radio {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .product-tabs-bar {
+    display: flex;
+    gap: 0;
+    background: #EDF1F7;
+    border: 1px solid #DCDCDC;
+    border-bottom: none;
+    border-radius: 20px 20px 0 0;
+    overflow: hidden;
+  }
+
+  .product-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 20px;
+    font-family: 'Jost', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    text-transform: capitalize;
+    color: #253461;
+    background: transparent;
+    border: none;
+    border-right: 1px solid #DCDCDC;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+
+  .product-tab:last-child {
+    border-right: none;
+  }
+
+  .product-tab:hover {
+    color: #253461;
+    background: #dfe5ef;
+  }
+
+  .product-tab svg {
+    flex-shrink: 0;
+  }
+
+  /* CSS-only tab switching via :checked radio inputs */
+  .product-tab-content {
+    display: none;
+    background: #ffffff;
+    border: 1px solid #DCDCDC;
+    border-top: none;
+    border-radius: 0 0 20px 20px;
+    margin-top: 0;
+    padding: 35px 30px;
+    font-family: 'Jost', sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    color: #5F5F5F;
+  }
+
+  /* Show tab content when corresponding radio is checked */
+  #radio-description:checked ~ #tab-description,
+  #radio-prices:checked ~ #tab-prices,
+  #radio-design:checked ~ #tab-design {
+    display: block;
+  }
+
+  /* Active tab label styling when corresponding radio is checked */
+  #radio-description:checked ~ .product-tabs-bar label[for="radio-description"],
+  #radio-prices:checked ~ .product-tabs-bar label[for="radio-prices"],
+  #radio-design:checked ~ .product-tabs-bar label[for="radio-design"] {
+    color: #ffffff;
+    background: #253461;
+  }
+
+  #radio-description:checked ~ .product-tabs-bar label[for="radio-description"] svg,
+  #radio-prices:checked ~ .product-tabs-bar label[for="radio-prices"] svg,
+  #radio-design:checked ~ .product-tabs-bar label[for="radio-design"] svg {
+    stroke: #ffffff;
+  }
+
+  .no-pricing-message {
+    font-family: 'Jost', sans-serif;
+    font-size: 16px;
+    color: #5F5F5F;
+    text-align: center;
+    padding: 40px 20px;
+  }
+
+  /* Prices Tab - stacked layout (sidebar above table) */
+  .prices-tab-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+  }
+
+  .prices-tab-table {
+    min-width: 0;
+  }
+
+  .prices-tab-sidebar {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .prices-sidebar-card {
+    border: 1px solid #DCDCDC;
+    border-radius: 15px;
+    padding: 20px 25px;
+    background: #fafafa;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr) auto;
+    gap: 20px;
+    align-items: start;
+  }
+
+  .prices-info-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 0;
+    border-bottom: none;
+  }
+
+  .prices-info-row:first-child {
+    padding-top: 0;
+  }
+
+  .prices-info-row:last-of-type {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .prices-info-icon {
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .prices-info-text strong {
+    display: block;
+    font-family: 'Jost', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #253461;
+    margin: 0 0 4px 0;
+  }
+
+  .prices-info-text p {
+    font-family: 'Roboto', sans-serif;
+    font-size: 13px;
+    color: #5F5F5F;
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  .prices-info-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .prices-info-btn {
+    display: inline-block;
+    flex: 1;
+    text-align: center;
+    font-family: 'Jost', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    padding: 9px 14px;
+    border-radius: 50px;
+    text-decoration: none;
+    transition: all 0.2s;
+    background: #10C99E;
+    color: white;
+    border: 1.5px solid #10C99E;
+    white-space: nowrap;
+  }
+
+  .prices-info-btn:hover {
+    background: #0eb88f;
+    border-color: #0eb88f;
+    color: white;
+  }
+
+  .prices-info-btn-wrapper :global(button) {
+    display: inline-block;
+    width: 100%;
+    text-align: center;
+    font-family: 'Jost', sans-serif !important;
+    font-size: 11px !important;
+    font-weight: 500 !important;
+    text-transform: uppercase !important;
+    padding: 9px 14px !important;
+    border-radius: 50px !important;
+    background: #10C99E !important;
+    color: white !important;
+    border: 1.5px solid #10C99E !important;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .prices-info-btn-wrapper :global(button:hover) {
+    background: #0eb88f !important;
+    border-color: #0eb88f !important;
+  }
+
+  .prices-info-btn-outline {
+    background: transparent;
+    color: #253461;
+    border-color: #253461;
+  }
+
+  .prices-info-btn-outline:hover {
+    background: #253461;
+    color: white;
+  }
+
+  /* Design Tab Styles */
+  .design-tab-header {
+    text-align: center;
+    margin-bottom: 30px;
+  }
+
+  .design-tab-title {
+    font-family: 'Jost', sans-serif;
+    font-size: 32px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #253461;
+    margin: 0 0 15px 0;
+  }
+
+  .design-tab-title .highlight {
+    color: #469ADC;
+  }
+
+  .design-tab-description {
+    font-family: 'Jost', sans-serif;
+    font-size: 16px;
+    color: #5F5F5F;
+    max-width: 700px;
+    margin: 0 auto 20px auto;
+    line-height: 1.6;
+  }
+
+  .design-tab-cta :global(button) {
+    background-color: #10C99E !important;
+    color: white !important;
+    font-family: 'Jost', sans-serif !important;
+    font-size: 15px !important;
+    font-weight: 500 !important;
+    text-transform: uppercase !important;
+    padding: 12px 25px !important;
+    border-radius: 100px !important;
+    border: 1px solid #10C99E !important;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .design-tab-cta :global(button:hover) {
+    background-color: transparent !important;
+    color: #10C99E !important;
+  }
+
+  .design-tab-options {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    background: #f5f5f5;
+    padding: 25px;
+    border-radius: 15px;
+  }
+
+  .design-tab-card {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 20px 25px;
+    border: 1px solid #DCDCDC;
+    border-radius: 15px;
+    background: #fafafa;
+    transition: border-color 0.2s;
+  }
+
+  .design-tab-card:hover {
+    border-color: #469ADC;
+  }
+
+  .design-tab-card-icon {
+    flex-shrink: 0;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #253461;
+    border-radius: 12px;
+  }
+
+  .design-tab-card-text {
+    flex: 1;
+  }
+
+  .design-tab-card-text strong {
+    display: block;
+    font-family: 'Jost', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    color: #253461;
+    margin: 0 0 4px 0;
+  }
+
+  .design-tab-card-text p {
+    font-family: 'Roboto', sans-serif;
+    font-size: 14px;
+    color: #5F5F5F;
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  .design-tab-card-btn {
+    flex-shrink: 0;
+    display: inline-block;
+    background: #10C99E;
+    color: white;
+    font-family: 'Jost', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    text-transform: uppercase;
+    padding: 10px 20px;
+    border-radius: 50px;
+    text-decoration: none;
+    border: 1px solid #10C99E;
+    transition: background 0.2s;
+  }
+
+  .design-tab-card-btn:hover {
+    background: transparent;
+    color: #10C99E;
+  }
+
+  .design-tab-card-btn-wrapper :global(button) {
+    background-color: #10C99E !important;
+    color: white !important;
+    font-family: 'Jost', sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    text-transform: uppercase !important;
+    padding: 10px 20px !important;
+    border-radius: 50px !important;
+    border: 1px solid #10C99E !important;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .design-tab-card-btn-wrapper :global(button:hover) {
+    background-color: transparent !important;
+    color: #10C99E !important;
+  }
+
+  /* Tier pricing — fixed height with scroll */
+  .tier-pricing-table-wrapper {
+    max-height: 380px;
+    overflow-y: auto;
+  }
+
+
+  .tier-pricing-title {
+    font-family: 'Jost', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    color: #253461;
+    margin: 0 0 20px 0;
+    text-transform: uppercase;
+  }
+
+  .tier-pricing-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tier-pricing-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Roboto', sans-serif;
+    font-size: 14px;
+    min-width: 600px;
+  }
+
+  .tier-pricing-table th {
+    font-family: 'Jost', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    color: #253461;
+    text-transform: uppercase;
+    padding: 12px 16px;
+    border-bottom: 2px solid #253461;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .tier-pricing-table th:first-child {
+    text-align: left;
+  }
+
+  .tier-pricing-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f0f0f0;
+    text-align: center;
+  }
+
+  .tier-pricing-table .combo-label {
+    text-align: left;
+    font-weight: 500;
+    color: #333;
+    white-space: normal;
+    min-width: 150px;
+  }
+
+  .tier-pricing-table .combo-price {
+    font-family: 'Jost', sans-serif;
+    font-weight: 600;
+    white-space: nowrap;
+    color: #253461;
+  }
+
+  .tier-pricing-table tr:hover {
+    background: #f5f7ff;
+  }
+
+  .tier-pricing-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  /* Mobile-only pricing elements — hidden on desktop */
+  .pricing-config-heading,
+  .pricing-scroll-indicator,
+  .pricing-scroll-bottom-hint,
+  .pricing-mobile-footnote,
+  .th-mobile {
+    display: none;
+  }
+  .th-desktop {
+    display: inline;
+  }
+
+  @media (max-width: 768px) {
+    .product-title-wrapper {
+      margin: -20px -20px 15px -20px; /* Match gallery padding on mobile too */
+      padding: 15px 20px 12px 20px;
+    }
+    .product-title {
+      font-size: 14px;
+      line-height: 14px;
+    }
+    .product-starting-price {
+      font-size: 12px;
+      padding: 5px 12px;
+    }
+    .product-tab {
+      padding: 12px 10px;
+      font-size: 12px;
+      gap: 5px;
+    }
+    .product-tab svg {
+      width: 14px;
+      height: 14px;
+    }
+    .product-tab-content {
+      padding: 25px 20px;
+      font-size: 15px;
+    }
+    .design-tab-title {
+      font-size: 24px;
+    }
+    .design-tab-card {
+      flex-direction: column;
+      text-align: center;
+      gap: 12px;
+    }
+    .tier-pricing-table {
+      font-size: 13px;
+      min-width: 500px;
+    }
+    .tier-pricing-table th,
+    .tier-pricing-table td {
+      padding: 10px 10px;
+    }
+    .tier-pricing-table .combo-label {
+      min-width: 120px;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    /* === MOBILE PRICING TABLE === */
+
+    /* Swap th text */
+    .th-desktop { display: none; }
+    .th-mobile { display: inline; }
+
+    /* "CONFIGURATION" heading */
+    .pricing-config-heading {
+      display: block;
+      font-family: 'Jost', sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+      color: #253461;
+      text-transform: uppercase;
+      margin: 0 0 10px 0;
+    }
+
+    /* ← Faites défiler pour voir plus de prix → */
+    .pricing-scroll-indicator {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 5px 10px;
+      margin: 0 auto 8px auto;
+      width: fit-content;
+      max-width: 80%;
+      border: 1.5px solid #253461;
+      border-radius: 8px;
+    }
+    .pricing-scroll-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      font-size: 16px;
+      color: #253461;
+      cursor: pointer;
+      padding: 2px 4px;
+      flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .pricing-scroll-btn:active {
+      opacity: 0.6;
+    }
+    .pricing-scroll-text {
+      font-family: 'Jost', sans-serif;
+      font-weight: 500;
+      font-size: 11px;
+      color: #253461;
+      text-align: center;
+    }
+
+    /* Blue scrollbar on pricing table */
+    .tier-pricing-table-wrapper::-webkit-scrollbar {
+      height: 6px;
+    }
+    .tier-pricing-table-wrapper::-webkit-scrollbar-track {
+      background: #EDF1F7;
+      border-radius: 3px;
+    }
+    .tier-pricing-table-wrapper::-webkit-scrollbar-thumb {
+      background: #253461;
+      border-radius: 3px;
+    }
+
+    /* Bottom scroll hint — navy hand icon + navy text in bordered box */
+    .pricing-scroll-bottom-hint {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      margin: 10px auto 0 auto;
+      width: fit-content;
+      border: 1px solid #DCDCDC;
+      border-radius: 12px;
+      font-family: 'Jost', sans-serif;
+      font-weight: 500;
+      font-size: 12px;
+      color: #253461;
+      line-height: 1.4;
+      transition: opacity 0.3s ease;
+    }
+    .pricing-hint-hand {
+      flex-shrink: 0;
+      width: 24px;
+      height: 24px;
+    }
+
+    /* Footnote */
+    .pricing-mobile-footnote {
+      display: block;
+      font-family: 'Jost', sans-serif;
+      font-size: 11px;
+      color: #999;
+      margin: 6px 0 0 0;
+    }
+  }
+
+  /* ProductConfigurator component handles variations and add-to-cart via steps.css */
+
+  .description-content {
+    font-family: 'Jost', sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    color: #5F5F5F;
+  }
+
+  /* Styles for injected HTML content (set:html) - must use :global() */
+  /* Main title in description - WordPress style (first h2 only) */
+  .description-content :global(h2:first-of-type) {
+    font-family: 'Jost', sans-serif;
+    font-size: 45px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #253461;
+    text-align: center;
+    margin: 0 0 30px 0;
+    line-height: 1.2;
+  }
+
+  /* Other headings in description (not the main title) */
+  .description-content :global(h2 ~ h2),
+  .description-content :global(h3) {
+    font-family: 'Jost', sans-serif;
+    color: #253461;
+    margin: 30px 0 15px 0;
+    font-size: 22px;
+    font-weight: 600;
+    text-align: left;
+    text-transform: none;
+  }
+
+  .description-content :global(h4) {
+    font-family: 'Jost', sans-serif;
+    color: #253461;
+    margin: 25px 0 12px 0;
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .description-content :global(p) {
+    margin-bottom: 18px;
+  }
+
+  /* Bullet point list styling - WordPress style */
+  .description-content :global(ul) {
+    list-style: none;
+    padding-left: 40px;
+    margin: 20px 0;
+  }
+
+  .description-content :global(ul li) {
+    position: relative;
+    padding-left: 25px;
+    line-height: 1.6;
+  }
+
+  .description-content :global(ul li::before) {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 8px;
+    width: 8px;
+    height: 8px;
+    background-color: #5F5F5F;
+    border-radius: 50%;
+  }
+
+  /* Ordered list styling */
+  .description-content :global(ol) {
+    list-style-type: decimal;
+    padding-left: 40px;
+    margin: 20px 0;
+  }
+
+  .description-content :global(ol li) {
+    line-height: 1.6;
+    padding-left: 5px;
+  }
+
+  .description-content :global(a) {
+    color: #469ADC;
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  .description-content :global(a:hover) {
+    color: #253461;
+    text-decoration: underline;
+  }
+
+  .description-content :global(strong) {
+    font-weight: 600;
+  }
+
+  @media (max-width: 768px) {
+    .description-content {
+      font-size: 15px;
+    }
+
+    .description-content :global(h2:first-of-type) {
+      font-size: 28px;
+    }
+
+    .description-content :global(h2 ~ h2),
+    .description-content :global(h3) {
+      font-size: 18px;
+    }
+
+    .description-content :global(ul li) {
+      padding-left: 22px;
+    }
+
+    .description-content :global(ul li::before) {
+      width: 6px;
+      height: 6px;
+      top: 7px;
+    }
+  }
+
+  @media (max-width: 992px) {
+    .prices-sidebar-card {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    .prices-info-row {
+      padding: 10px 0;
+      border-bottom: 1px solid #ECECEC;
+    }
+    .prices-info-row:last-of-type {
+      border-bottom: none;
+    }
+    .prices-info-buttons {
+      flex-direction: row;
+    }
+  }
+
+  /* Lightbox */
+  .lightbox {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+  }
+
+  .lightbox.active {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .lightbox-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+  }
+
+  .lightbox-content {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .lightbox-image-container {
+    max-width: 90%;
+    max-height: 90%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .lightbox-image-container img {
+    max-width: 100%;
+    max-height: 85vh;
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+  }
+
+  .lightbox-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    font-size: 32px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
+
+  .lightbox-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+  }
+
+  .lightbox-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 50px;
+    height: 50px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
+
+  .lightbox-nav:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-50%) scale(1.1);
+  }
+
+  .lightbox-prev {
+    left: 20px;
+  }
+
+  .lightbox-next {
+    right: 20px;
+  }
+
+  .lightbox-counter {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    font-family: 'Roboto', sans-serif;
+    font-size: 16px;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 8px 20px;
+    border-radius: 20px;
+  }
+
+  /* Make main image clickable */
+  .main-image {
+    cursor: zoom-in;
+  }
+
+  @media (max-width: 768px) {
+    .lightbox-nav {
+      width: 40px;
+      height: 40px;
+    }
+
+    .lightbox-prev {
+      left: 10px;
+    }
+
+    .lightbox-next {
+      right: 10px;
+    }
+
+    .lightbox-close {
+      top: 10px;
+      right: 10px;
+      width: 40px;
+      height: 40px;
+      font-size: 24px;
+    }
+  }
+
+  /* FAQ Section Styles - Card style matching product description */
+  .faq-section {
+    padding: 30px 0;
+    background: #ffffff;
+  }
+
+  .faq-card {
+    background: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 30px;
+  }
+
+  .faq-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e0e0e0;
+    position: relative;
+  }
+
+  .faq-title-icon {
+    flex-shrink: 0;
+    position: absolute;
+    left: 0;
+  }
+
+  .faq-title {
+    font-family: 'Jost', sans-serif;
+    font-size: 35px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #253461;
+    margin: 0;
+    text-align: center;
+    width: 100%;
+  }
+
+  .faq-title .highlight {
+    color: #469ADC;
+  }
+
+  .faq-accordion {
+    width: 100%;
+  }
+
+  .faq-item {
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  .faq-item:last-child {
+    border-bottom: none;
+  }
+
+  .faq-question {
+    width: 100%;
+    padding: 18px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    font-family: 'Jost', sans-serif;
+    font-size: 25px;
+    font-weight: 400;
+    color: #253461;
+    list-style: none;
+  }
+
+  /* Hide default disclosure triangle */
+  .faq-question::-webkit-details-marker {
+    display: none;
+  }
+
+  .faq-question:hover {
+    color: #253461;
+  }
+
+  .faq-question span {
+    flex: 1;
+    padding-right: 15px;
+  }
+
+  /* Plus/Minus icon toggle */
+  .faq-icon {
+    flex-shrink: 0;
+  }
+
+  .faq-icon-minus {
+    display: none;
+  }
+
+  .faq-item[open] .faq-icon-plus {
+    display: none;
+  }
+
+  .faq-item[open] .faq-icon-minus {
+    display: block;
+  }
+
+  .faq-answer {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+  }
+
+  .faq-item[open] .faq-answer {
+    max-height: 500px;
+  }
+
+  .faq-answer-content {
+    padding: 0 0 20px 0;
+    font-family: 'Roboto', sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+    color: #5f5f5f;
+  }
+
+  .faq-answer-content p {
+    margin: 0 0 15px 0;
+  }
+
+  .faq-answer-content p:last-child {
+    margin-bottom: 0;
+  }
+
+  @media (max-width: 768px) {
+    .faq-section {
+      padding: 30px 0;
+    }
+
+    .faq-card {
+      padding: 20px;
+    }
+
+    .faq-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 15px;
+    }
+
+    .faq-title-icon {
+      position: static;
+    }
+
+    .faq-title {
+      font-size: 24px;
+      text-align: left;
+    }
+
+    .faq-question {
+      font-size: 15px;
+      padding: 15px 0;
+    }
+
+    .faq-answer-content {
+      font-size: 14px;
+    }
+  }
+
+  /* Maillot Cluster FAQ - Matches .faq-card style above */
+  .cluster-faq-section {
+    padding: 40px 0;
+    background: #ffffff;
+  }
+
+  .cluster-faq-wrap {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0;
+  }
+
+  .cluster-faq-card {
+    background: #ffffff;
+    padding: 30px;
+  }
+
+  .cluster-faq-header {
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+  }
+
+  .cluster-faq-title {
+    font-family: 'Jost', sans-serif;
+    font-size: 35px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #253461;
+    margin: 0;
+    text-align: center;
+  }
+
+  .cluster-faq-title .highlight {
+    color: #469ADC;
+  }
+
+  .cluster-faq-item {
+    border-bottom: 1px solid #e0e0e0;
+    padding: 18px 0;
+  }
+
+  .cluster-faq-item:last-child {
+    border-bottom: none;
+  }
+
+  .cluster-faq-item h3 {
+    font-family: 'Jost', sans-serif;
+    font-size: 25px;
+    font-weight: 400;
+    color: #253461;
+    margin: 0 0 10px 0;
+  }
+
+  .cluster-faq-answer {
+    font-family: 'Roboto', sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+    color: #5f5f5f;
+  }
+
+  .cluster-faq-answer :global(p) {
+    margin: 0 0 15px 0;
+  }
+
+  .cluster-faq-answer :global(p:last-child) {
+    margin-bottom: 0;
+  }
+
+  .cluster-faq-answer :global(ul) {
+    margin: 10px 0;
+    padding-left: 25px;
+  }
+
+  .cluster-faq-answer :global(li) {
+    margin-bottom: 5px;
+  }
+
+  .cluster-faq-answer :global(a) {
+    color: #00AEEF;
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .cluster-faq-answer :global(a:hover) {
+    color: #253461;
+    text-decoration: underline;
+  }
+
+  .cluster-faq-answer :global(strong a) {
+    font-weight: 700;
+  }
+
+  @media (max-width: 768px) {
+    .cluster-faq-section {
+      padding: 30px 0;
+    }
+
+    .cluster-faq-wrap {
+      padding: 0 15px;
+    }
+
+    .cluster-faq-card {
+      padding: 20px;
+    }
+
+    .cluster-faq-title {
+      font-size: 24px;
+    }
+
+    .cluster-faq-item h3 {
+      font-size: 15px;
+    }
+
+    .cluster-faq-answer {
+      font-size: 14px;
+    }
+  }
+
+  /* Related Products Section - "Other customers also liked these products" - Matching WordPress */
+  .related-products-section {
+    padding: 60px 0;
+    background: #F4F4F4;
+    width: 100%;
+  }
+
+  .related-products-container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0;
+  }
+
+  .related-heading {
+    font-family: 'Jost', sans-serif;
+    font-size: 35px;
+    font-weight: 600;
+    color: #253461;
+    text-align: center;
+    margin: 0 0 40px 0;
+    text-transform: uppercase;
+  }
+
+  .related-heading .highlight {
+    color: #469ADC;
+  }
+
+  /* Grid: 5 columns, 20px column gap, 40px row gap */
+  .related-products {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-column-gap: 20px;
+    grid-row-gap: 40px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    width: 100%;
+  }
+
+  .related-product-item {
+    background: #fff;
+    text-align: center;
+    border: 1px solid #DCDCDC;
+    border-radius: 20px;
+    padding: 40px 15px;
+    box-sizing: border-box;
+  }
+
+  .related-product-link {
+    text-decoration: none;
+    display: block;
+  }
+
+  .related-product-link img {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+    object-fit: contain;
+    display: block;
+    border-radius: 10px;
+  }
+
+  .related-product-title {
+    font-family: 'Jost', sans-serif;
+    font-size: 18px;
+    font-weight: 500;
+    color: #253461;
+    margin: 15px 0 0 0;
+    padding: 0;
+    line-height: 1.3;
+    text-align: center;
+    text-transform: uppercase;
+  }
+
+  .related-product-link:hover .related-product-title {
+    color: #469ADC;
+  }
+
+  /* Tablet: 4 columns */
+  @media (max-width: 1024px) {
+    .related-products-section {
+      padding: 40px 0;
+    }
+
+    .related-products {
+      grid-template-columns: repeat(4, 1fr);
+    }
+
+    .related-heading {
+      font-size: 28px;
+    }
+  }
+
+  /* Mobile: 2 columns */
+  @media (max-width: 768px) {
+    .related-products-section {
+      padding: 40px 0;
+    }
+
+    .related-products {
+      grid-template-columns: repeat(2, 1fr);
+      grid-column-gap: 15px;
+      grid-row-gap: 20px;
+    }
+
+    .related-product-item {
+      padding: 20px 10px;
+    }
+
+    .related-heading {
+      font-size: 22px;
+      margin-bottom: 25px;
+    }
+
+    .related-product-title {
+      font-size: 14px;
+    }
+  }
+
+  /* Small mobile: 1 column */
+  @media (max-width: 480px) {
+    .related-products {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Below-fold sections - defer rendering until near viewport */
+  .faq-section,
+  .related-products-section,
+  .reviews-section {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 400px;
+  }
+
+  /* Customer Reviews Section - "What Customers Say About Us" - Matching homepage spacing */
+  .reviews-section {
+    width: 100%;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 80px 0 50px 0;
+  }
+
+  .reviews-heading {
+    font-family: 'Jost', sans-serif;
+    font-size: 35px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #253461;
+    text-align: center;
+    margin: 0 0 55px 0;
+  }
+
+  .reviews-heading .highlight {
+    color: #469ADC;
+  }
+
+  .reviews-widget {
+    width: 100%;
+    min-height: 300px;
+  }
+
+  @media (max-width: 1024px) {
+    .reviews-heading {
+      font-size: 30px;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .reviews-section {
+      padding: 40px 20px;
+    }
+
+    .reviews-heading {
+      font-size: 28px;
+    }
+  }
+  /* SEO override content blocks (see src/config/seo-overrides.ts) */
+  .product-seo-intro {
+    margin: 16px 0 8px;
+  }
+  .product-seo-intro :global(p) {
+    color: #5f5f5f;
+    font-size: 15px;
+    line-height: 1.65;
+    margin: 0 0 10px;
+  }
+  .product-seo-block {
+    padding: 30px 0 10px;
+  }
+  .product-seo-block-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    text-align: center;
+  }
+  .product-seo-block-inner :global(h2) {
+    color: #253461;
+    font-size: 24px;
+    margin: 28px 0 12px;
+  }
+  .product-seo-block-inner :global(p) {
+    color: #5f5f5f;
+    font-size: 15px;
+    line-height: 1.65;
+    margin: 0 0 12px;
+  }
+  .product-seo-block-inner :global(a) {
+    color: #253461;
+    text-decoration: underline;
+  }
+</style>
+
+<script>
+  // The main image is now correctly sized in the HTML (768px at 1x, full original at 2x),
+  // so there is no progressive upgrade to run. The old 4s swap did not dodge LCP - it
+  // DEFINED it: Lighthouse never interacts, so painting a larger image at load+4s made
+  // that the final LCP candidate, and its URL was invisible to the preload scanner.
+
+  // Thumbnail Gallery Pagination (WordPress style)
+  const PAGE_SIZE = 20;
+  let currentPage = 0;
+  const thumbnailItems = document.querySelectorAll('.thumbnail-item');
+  const totalThumbnails = thumbnailItems.length;
+  const showMoreBtn = document.getElementById('thumb-more');
+  const goBackBtn = document.getElementById('thumb-back');
+
+  function showPage(page: number) {
+    const start = page * PAGE_SIZE;
+    const end = Math.min(start + PAGE_SIZE, totalThumbnails);
+
+    thumbnailItems.forEach((item, index) => {
+      const li = item as HTMLElement;
+      if (index >= start && index < end) {
+        li.style.display = 'inline-block';
+        // Lazy load images on this page
+        const img = li.querySelector('img');
+        if (img && img.loading === 'lazy') {
+          img.loading = 'eager';
+        }
+      } else {
+        li.style.display = 'none';
+      }
+    });
+  }
+
+  function updateControls() {
+    if (!showMoreBtn || !goBackBtn) return;
+
+    const end = Math.min((currentPage + 1) * PAGE_SIZE, totalThumbnails);
+    const hasMorePages = end < totalThumbnails;
+    const hasPreviousPages = currentPage > 0;
+
+    showMoreBtn.style.display = hasMorePages ? 'inline-block' : 'none';
+    goBackBtn.style.display = hasPreviousPages ? 'inline-block' : 'none';
+  }
+
+  // Initialize pagination
+  if (totalThumbnails > PAGE_SIZE) {
+    showPage(0);
+    updateControls();
+
+    if (showMoreBtn) {
+      showMoreBtn.addEventListener('click', () => {
+        if ((currentPage + 1) * PAGE_SIZE < totalThumbnails) {
+          currentPage++;
+          showPage(currentPage);
+          updateControls();
+        }
+      });
+    }
+
+    if (goBackBtn) {
+      goBackBtn.addEventListener('click', () => {
+        if (currentPage > 0) {
+          currentPage--;
+          showPage(currentPage);
+          updateControls();
+        }
+      });
+    }
+  }
+
+  // Gallery images data for lightbox
+  const galleryImages: { src: string; alt: string }[] = [];
+  document.querySelectorAll('.thumbnail-item img').forEach(img => {
+    const imgEl = img as HTMLImageElement;
+    // Prefer the full-resolution original: the lightbox is where users go FOR detail,
+    // and it was showing the Worker's 361px copy. Loads on interaction, so it costs no LCP.
+    const fullSrc = imgEl.dataset.originalSrc || imgEl.dataset.fullSrc;
+    if (fullSrc) {
+      galleryImages.push({
+        src: fullSrc,
+        alt: imgEl.alt || ''
+      });
+    }
+  });
+
+  // If no thumbnails, get from main image
+  if (galleryImages.length === 0) {
+    const mainImg = document.getElementById('main-product-image') as HTMLImageElement;
+    if (mainImg) {
+      galleryImages.push({
+        src: mainImg.src,
+        alt: mainImg.alt
+      });
+    }
+  }
+
+  let currentLightboxIndex = 0;
+
+  // Lightbox elements
+  const lightbox = document.getElementById('lightbox');
+  const lightboxImage = document.getElementById('lightbox-image') as HTMLImageElement;
+  const lightboxCurrent = document.getElementById('lightbox-current');
+  const lightboxClose = document.querySelector('.lightbox-close');
+  const lightboxBackdrop = document.querySelector('.lightbox-backdrop');
+  const lightboxPrev = document.querySelector('.lightbox-prev');
+  const lightboxNext = document.querySelector('.lightbox-next');
+
+  // Open lightbox
+  function openLightbox(index: number) {
+    if (!lightbox || !lightboxImage || galleryImages.length === 0) return;
+
+    currentLightboxIndex = index;
+    updateLightboxImage();
+    lightbox.classList.add('active');
+    lightbox.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  }
+
+  // Close lightbox
+  function closeLightbox() {
+    if (!lightbox) return;
+
+    lightbox.classList.remove('active');
+    lightbox.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+
+  // Update lightbox image
+  function updateLightboxImage() {
+    if (!lightboxImage || !lightboxCurrent) return;
+
+    const image = galleryImages[currentLightboxIndex];
+    lightboxImage.src = image.src;
+    lightboxImage.alt = image.alt;
+    lightboxCurrent.textContent = String(currentLightboxIndex + 1);
+  }
+
+  // Navigate lightbox
+  function navigateLightbox(direction: number) {
+    currentLightboxIndex += direction;
+
+    // Loop around
+    if (currentLightboxIndex < 0) {
+      currentLightboxIndex = galleryImages.length - 1;
+    } else if (currentLightboxIndex >= galleryImages.length) {
+      currentLightboxIndex = 0;
+    }
+
+    updateLightboxImage();
+  }
+
+  // Main image click opens lightbox
+  const mainImageContainer = document.querySelector('.main-image');
+  if (mainImageContainer) {
+    mainImageContainer.addEventListener('click', () => {
+      // Find current active thumbnail index
+      const activeItem = document.querySelector('.thumbnail-item.active img');
+      const index = activeItem ? parseInt((activeItem as HTMLElement).dataset.index || '0') : 0;
+      openLightbox(index);
+    });
+  }
+
+  // Thumbnail gallery interaction - click on li or img to swap main image
+  // Uses progressive enhancement: show Worker image fast, then upgrade to WordPress
+  document.querySelectorAll('.thumbnail-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const mainImg = document.getElementById('main-product-image') as HTMLImageElement;
+      const img = item.querySelector('img') as HTMLImageElement;
+      const displaySrc = img?.dataset.displaySrc || img?.dataset.fullSrc; // correctly-sized main image
+      const originalSrc = img?.dataset.originalSrc;                       // WordPress full quality
+
+      if (mainImg && displaySrc) {
+        // The <source> wins over the img on phones, so it has to move too - otherwise
+        // mobile stays stuck on image 0 while desktop swaps. Arrow navigation routes
+        // through this same handler via targetThumbnail.click().
+        const mobileSource = document.getElementById('main-image-mobile-source') as HTMLSourceElement | null;
+        if (mobileSource) mobileSource.srcset = displaySrc;
+
+        // Swap straight to the correctly-sized image, same 1x/2x pair the page ships with.
+        // srcset first, then src, so the browser only ever picks one candidate.
+        mainImg.srcset = originalSrc ? `${displaySrc} 1x, ${originalSrc} 2x` : '';
+        mainImg.src = displaySrc;
+
+        // Update active state on li elements
+        document.querySelectorAll('.thumbnail-item').forEach(t => t.classList.remove('active'));
+        item.classList.add('active');
+      }
+    });
+
+    // Double-click thumbnail opens lightbox at that image
+    item.addEventListener('dblclick', () => {
+      const img = item.querySelector('img') as HTMLImageElement;
+      const index = parseInt(img?.dataset.index || '0');
+      openLightbox(index);
+    });
+  });
+
+  // Gallery Arrow Navigation
+  const galleryPrevBtn = document.getElementById('gallery-prev');
+  const galleryNextBtn = document.getElementById('gallery-next');
+  const allThumbnails = document.querySelectorAll('.thumbnail-item');
+
+  function getCurrentGalleryIndex(): number {
+    const activeItem = document.querySelector('.thumbnail-item.active img') as HTMLImageElement;
+    return activeItem ? parseInt(activeItem.dataset.index || '0') : 0;
+  }
+
+  function navigateGallery(direction: number) {
+    const currentIndex = getCurrentGalleryIndex();
+    let newIndex = currentIndex + direction;
+
+    // Loop around
+    if (newIndex < 0) {
+      newIndex = allThumbnails.length - 1;
+    } else if (newIndex >= allThumbnails.length) {
+      newIndex = 0;
+    }
+
+    // Click the thumbnail at the new index to trigger image swap
+    const targetThumbnail = allThumbnails[newIndex] as HTMLElement;
+    if (targetThumbnail) {
+      targetThumbnail.click();
+    }
+  }
+
+  if (galleryPrevBtn) {
+    galleryPrevBtn.addEventListener('click', (e) => {
+      e.stopPropagation(); // Prevent lightbox from opening
+      navigateGallery(-1);
+    });
+  }
+
+  if (galleryNextBtn) {
+    galleryNextBtn.addEventListener('click', (e) => {
+      e.stopPropagation(); // Prevent lightbox from opening
+      navigateGallery(1);
+    });
+  }
+
+  // Lightbox controls
+  if (lightboxClose) {
+    lightboxClose.addEventListener('click', closeLightbox);
+  }
+
+  if (lightboxBackdrop) {
+    lightboxBackdrop.addEventListener('click', closeLightbox);
+  }
+
+  if (lightboxPrev) {
+    lightboxPrev.addEventListener('click', () => navigateLightbox(-1));
+  }
+
+  if (lightboxNext) {
+    lightboxNext.addEventListener('click', () => navigateLightbox(1));
+  }
+
+  // Keyboard navigation
+  document.addEventListener('keydown', (e) => {
+    if (!lightbox?.classList.contains('active')) return;
+
+    switch (e.key) {
+      case 'Escape':
+        closeLightbox();
+        break;
+      case 'ArrowLeft':
+        navigateLightbox(-1);
+        break;
+      case 'ArrowRight':
+        navigateLightbox(1);
+        break;
+    }
+  });
+
+  // Product configurator handles all quantity and add-to-cart functionality via React component
+
+  // Product tabs now work via CSS-only radio inputs (no JS needed)
+
+  // Top scrollbar sync for pricing table
+  const scrollTop = document.querySelector('.tier-pricing-scroll-top') as HTMLElement | null;
+  const scrollInner = document.querySelector('.tier-pricing-scroll-inner') as HTMLElement | null;
+  const tableWrapper = document.querySelector('.tier-pricing-table-wrapper') as HTMLElement | null;
+  if (scrollTop && scrollInner && tableWrapper) {
+    const syncWidth = () => {
+      scrollInner.style.width = tableWrapper.scrollWidth + 'px';
+    };
+    syncWidth();
+    window.addEventListener('resize', syncWidth);
+    let syncing = false;
+    scrollTop.addEventListener('scroll', () => {
+      if (!syncing) { syncing = true; tableWrapper.scrollLeft = scrollTop.scrollLeft; syncing = false; }
+    });
+    tableWrapper.addEventListener('scroll', () => {
+      if (!syncing) { syncing = true; scrollTop.scrollLeft = tableWrapper.scrollLeft; syncing = false; }
+    });
+  }
+
+  // Pricing table scroll indicator arrows (mobile)
+  {
+    const tw = document.querySelector('.tier-pricing-table-wrapper') as HTMLElement | null;
+    const btnLeft = document.querySelector('.pricing-scroll-btn-left') as HTMLButtonElement | null;
+    const btnRight = document.querySelector('.pricing-scroll-btn-right') as HTMLButtonElement | null;
+
+    if (tw) {
+      const scrollAmount = 150;
+
+      if (btnLeft) btnLeft.addEventListener('click', () => {
+        tw.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+      });
+      if (btnRight) btnRight.addEventListener('click', () => {
+        tw.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+      });
+
+      // Bottom hint stays visible — no auto-hide
+    }
+  }
+
+  // FAQ accordion now works via native <details>/<summary> elements (no JS needed)
+
+  // Load TrustIndex widget only when visible, after React hydration completes
+  const trustIndexContainer = document.getElementById('trustindex-widget-product');
+  if (trustIndexContainer) {
+    const CORRECT_MAPS_URL = 'https://www.google.com/maps/place/Hercules+Merchandising+France/@30.886403,-49.4022061,3z/data=!3m1!4b1!4m8!3m7!1s0x21d159209e369b9d:0xa126617f91835893!8m2!3d30.886403!4d-49.4022062!9m1!1b1!16s%2Fg%2F11vkhhwqmm?entry=ttu&g_ep=EgoyMDI2MDIxOC4wIKXMDSoASAFQAw%3D%3D';
+
+    const loadTrustWidget = () => {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.trustindex.io/loader.js?4fe205b569ba69155006b1f0ba2';
+      script.defer = true;
+      script.async = true;
+      trustIndexContainer.appendChild(script);
+
+      const linkObserver = new MutationObserver(() => {
+        trustIndexContainer.querySelectorAll('a[href*="admin.trustindex.io"]').forEach(a => {
+          a.href = CORRECT_MAPS_URL;
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+        });
+        trustIndexContainer.querySelectorAll('[data-platform-page-url*="admin.trustindex.io"]').forEach(el => {
+          el.setAttribute('data-platform-page-url', CORRECT_MAPS_URL);
+        });
+      });
+      linkObserver.observe(trustIndexContainer, { childList: true, subtree: true });
+    };
+
+    // Defer loading until section is near viewport (below the fold)
+    if ('IntersectionObserver' in window) {
+      const section = trustIndexContainer.closest('.reviews-section') || trustIndexContainer;
+      const obs = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting) {
+          obs.disconnect();
+          loadTrustWidget();
+        }
+      }, { rootMargin: '200px' });
+      obs.observe(section);
+    } else {
+      setTimeout(loadTrustWidget, 12000);
+    }
+  }
+</script>
+
+<script>
+  // Distributor discount: apply to static prices (FROM badge + pricing table)
+  function applyDistributorPrices() {
+    try {
+      const distRaw = localStorage.getItem('hercules_distributor');
+      if (!distRaw) return;
+      const distData = JSON.parse(distRaw);
+      if (!distData.isDistributor || distData.discount <= 0) return;
+
+      const pct = distData.discount / 100;
+      const fmtEUR = (n: number) => `${n.toFixed(2).replace('.', ',')} €`;
+
+      // À PARTIR DE badge
+      const badge = document.getElementById('starting-price-badge');
+      if (badge && !badge.dataset.discounted) {
+        const orig = parseFloat(badge.dataset.originalPrice || '0');
+        if (orig > 0) {
+          const discounted = Math.round(orig * (1 - pct) * 100) / 100;
+          badge.textContent = `À PARTIR DE ${fmtEUR(discounted)} HT`;
+          badge.dataset.discounted = 'true';
+        }
+      }
+
+      // Pricing table cells
+      document.querySelectorAll('.distributor-price-cell').forEach((cell) => {
+        const el = cell as HTMLElement;
+        if (el.dataset.discounted) return;
+        const orig = parseFloat(el.dataset.originalPrice || '0');
+        if (orig > 0) {
+          const discounted = Math.round(orig * (1 - pct) * 100) / 100;
+          el.textContent = fmtEUR(discounted);
+          el.dataset.discounted = 'true';
+        }
+      });
+    } catch (e) { /* graceful degradation: show original prices */ }
+  }
+
+  // Run immediately (works if localStorage already has distributor data from previous visit)
+  applyDistributorPrices();
+
+  // Also listen for distributor store changes (handles first login when the store populates)
+  window.addEventListener('hercules:distributor-changed', applyDistributorPrices);
+</script>
+
+<script>
+  import { pushEcommerce } from '../../lib/tracking';
+
+  const el = document.querySelector<HTMLElement>('.product-page[data-ga4-item]');
+  if (el?.dataset.ga4Item) {
+    try {
+      const item = JSON.parse(el.dataset.ga4Item);
+      pushEcommerce('view_item', { value: item.price, items: [item] });
+    } catch {
+      // malformed payload: no event rather than a broken one
+    }
+  }
+</script>

@@ -1,0 +1,29 @@
+# Hercules NL — product-sync worker, PRODUCTION lane.
+# NL resources only. Never point this at an FR/DE/UK store, KV or repo.
+name = "hercules-product-sync-nl-prod"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+[vars]
+# Until go-live the production lane also reads the NL build origin; switch to
+# https://hercules-merchandise.nl when the zone is live (Phase 7).
+WC_STORE_URL = "https://nl.hercules-merchandising.fr"
+WORKER_BASE_URL = "https://hercules-product-sync-nl-prod.gilles-86d.workers.dev"
+# WEBHOOK_SECRET is a secret: `wrangler secret put WEBHOOK_SECRET -c wrangler.prod.toml`
+GITHUB_OWNER = "royboy31"
+GITHUB_REPO = "hercules-live-nl"
+GITHUB_WORKFLOW = "deploy.yml"
+GITHUB_REF = "production"
+ASTRO_SITE_URL = "https://hercules-merchandise.nl"
+# CLOUDFLARE_ZONE_ID: set once the hercules-merchandise.nl zone exists (Phase 1, Gilles)
+
+[[r2_buckets]]
+binding = "CLIENT_LOGOS_BUCKET"
+bucket_name = "hercules-nl-client-logos"
+
+[triggers]
+crons = ["0 4 * * *"]
+
+[[kv_namespaces]]
+binding = "PRODUCTS_KV"
+id = "87292f80a6fc4c1bb31c7ec8ec936c77"   # hercules-nl-products-prod

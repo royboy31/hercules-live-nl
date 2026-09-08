@@ -1,0 +1,124 @@
+---
+// Ce que les clients disent de nous - Customer Reviews Section
+// Uses TrustIndex widget for Google Reviews (FR widget ID from hercules-merchandising.fr)
+// TrustIndex logo replaced with Google logo via JS
+// Script loaded dynamically after React hydration to avoid hydration mismatch (error #418)
+---
+
+<section class="reviews-section" id="review-section">
+  <div class="reviews-container">
+    <h2 class="section-heading">
+      Ce que les clients <span class="highlight">disent de nous</span>
+    </h2>
+
+    <!-- TrustIndex Widget - FR widget ID from hercules-merchandising.fr -->
+    <div class="reviews-widget" id="trustindex-widget-home"></div>
+  </div>
+</section>
+
+<style>
+  .reviews-section {
+    width: 100%;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 80px 0 50px 0;
+  }
+
+  .reviews-container {
+    width: 100%;
+  }
+
+  .section-heading {
+    font-family: 'Jost', sans-serif;
+    font-size: 35px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #253461;
+    text-align: center;
+    margin: 0 0 55px 0;
+  }
+
+  .section-heading .highlight {
+    color: #469ADC;
+  }
+
+  .reviews-widget {
+    width: 100%;
+    min-height: 300px;
+  }
+
+  /* Hide only TrustIndex branding/powered-by links, not the review count link */
+  :global(.ti-widget .ti-footer-text a[href*="trustindex"]),
+  :global(.ti-widget a[title*="Trustindex"]),
+  :global(.ti-widget a[title*="trustindex"]) {
+    display: none !important;
+  }
+
+  /* Tablet */
+  @media (max-width: 1024px) {
+    .section-heading {
+      font-size: 30px;
+    }
+  }
+
+  /* Mobile */
+  @media (max-width: 767px) {
+    .reviews-section {
+      padding: 40px 20px;
+    }
+
+    .section-heading {
+      font-size: 28px;
+    }
+  }
+</style>
+
+<script is:inline>
+  (function() {
+    var container = document.getElementById('trustindex-widget-home');
+    if (!container) return;
+    var section = container.closest('.reviews-section');
+
+    var CORRECT_MAPS_URL = 'https://www.google.com/maps/place/Hercules+Merchandising+France/@30.886403,-49.4022061,3z/data=!3m1!4b1!4m8!3m7!1s0x21d159209e369b9d:0xa126617f91835893!8m2!3d30.886403!4d-49.4022062!9m1!1b1!16s%2Fg%2F11vkhhwqmm?entry=ttu&g_ep=EgoyMDI2MDIxOC4wIKXMDSoASAFQAw%3D%3D';
+
+    function fixReviewLinks(root) {
+      var links = root.querySelectorAll('a[href*="admin.trustindex.io"]');
+      links.forEach(function(a) {
+        a.href = CORRECT_MAPS_URL;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+      });
+      var items = root.querySelectorAll('[data-platform-page-url*="admin.trustindex.io"]');
+      items.forEach(function(el) {
+        el.setAttribute('data-platform-page-url', CORRECT_MAPS_URL);
+      });
+    }
+
+    function loadWidget() {
+      var script = document.createElement('script');
+      script.src = 'https://cdn.trustindex.io/loader.js?4fe205b569ba69155006b1f0ba2';
+      script.defer = true;
+      script.async = true;
+      container.appendChild(script);
+
+      var linkObserver = new MutationObserver(function() {
+        fixReviewLinks(container);
+      });
+      linkObserver.observe(container, { childList: true, subtree: true });
+    }
+
+    // Defer loading until section is near viewport (below the fold)
+    if ('IntersectionObserver' in window) {
+      var obs = new IntersectionObserver(function(entries) {
+        if (entries[0].isIntersecting) {
+          obs.disconnect();
+          loadWidget();
+        }
+      }, { rootMargin: '200px' });
+      obs.observe(section || container);
+    } else {
+      // Fallback: load after 12s
+      setTimeout(loadWidget, 12000);
+    }
+  })();
+</script>

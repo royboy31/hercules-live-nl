@@ -1,0 +1,22 @@
+# Hercules NL — form handler, PRODUCTION lane.
+# No [[routes]] yet: the hercules-merchandise.nl zone does not exist. Routes go on the
+# .nl zone ONLY — never on a live zone.
+name = "hercules-form-handler-nl-prod"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+[vars]
+SENDER_EMAIL = "info@hercules-merchandise.nl"
+SENDER_NAME = "Hercules Merchandise"
+COMPANY_EMAIL = "info@hercules-merchandise.nl"
+R2_PUBLIC_URL = "https://pub-b4e56da9f586435bbd738df31c8379a9.r2.dev"   # hercules-nl-form-uploads-prod
+PRODUCT_SYNC_URL = "https://hercules-product-sync-nl-prod.gilles-86d.workers.dev"
+# Secrets: BREVO_API_KEY, GOOGLE_APPS_SCRIPT_URL, WEBHOOK_SECRET via `wrangler secret put -c wrangler.prod.toml`
+
+# [[routes]]
+# pattern = "hercules-merchandise.nl/api/*"
+# zone_name = "hercules-merchandise.nl"
+
+[[r2_buckets]]
+binding = "FORM_UPLOADS"
+bucket_name = "hercules-nl-form-uploads-prod"
