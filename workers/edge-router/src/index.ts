@@ -9,6 +9,7 @@ interface Env {
   ASTRO_ORIGIN: string;
   WORDPRESS_ORIGIN: string;
   PRODUCT_SYNC_WORKER_URL: string;
+  ORIGIN_RESOLVE_HOST?: string;
 }
 
 // Paths that should NEVER be cached (dynamic/personalized)
@@ -525,10 +526,11 @@ export default {
           cacheTtl: 0,
           cacheEverything: false,
         } as any,
-      } : isWordPress ? {
+      } : isWordPress && env.ORIGIN_RESOLVE_HOST ? {
         cf: {
-          // Resolve directly to origin server IP to bypass Cloudflare's APO cookie stripping
-          resolveOverride: 'origin.hercules-merchandising.fr',
+          // Resolve directly to origin server IP to bypass Cloudflare's APO cookie stripping.
+          // Only when ORIGIN_RESOLVE_HOST is set in wrangler.toml (unset on NL: no FR hostname here).
+          resolveOverride: env.ORIGIN_RESOLVE_HOST,
           cacheTtl: 0,
           cacheEverything: false,
         } as any,
