@@ -68,7 +68,7 @@ jobs:
         env:
           WC_CONSUMER_KEY: ${{ secrets.WC_CONSUMER_KEY }}
           WC_CONSUMER_SECRET: ${{ secrets.WC_CONSUMER_SECRET }}
-          WORKER_URL: https://hercules-product-sync-fr.gilles-86d.workers.dev
+          WORKER_URL: https://hercules-product-sync-nl.gilles-86d.workers.dev
           # PUBLIC_ prefix is required: Astro's default envPrefix is 'PUBLIC_', so a bare
           # IS_STAGING never reaches import.meta.env in BaseLayout.astro.
           PUBLIC_IS_STAGING: 'true'
@@ -79,7 +79,7 @@ jobs:
         env:
           WC_CONSUMER_KEY: ${{ secrets.WC_CONSUMER_KEY_PROD }}
           WC_CONSUMER_SECRET: ${{ secrets.WC_CONSUMER_SECRET_PROD }}
-          WORKER_URL: https://hercules-product-sync-fr-prod.gilles-86d.workers.dev
+          WORKER_URL: https://hercules-product-sync-nl-prod.gilles-86d.workers.dev
           PUBLIC_IS_STAGING: 'false'
 
       # Fail closed before anything ships. The staging artifact must be unindexable on
