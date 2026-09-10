@@ -20,7 +20,7 @@ class Hercules_Post_Webhooks {
         if (strpos($site_url, 'staging.') !== false) {
             return 'https://hercules-product-sync-nl.gilles-86d.workers.dev';
         }
-        return 'https://hercules-product-sync-fr-production.gilles-86d.workers.dev';
+        return 'https://hercules-product-sync-nl-prod.gilles-86d.workers.dev';
     }
 
     public function __construct() {
