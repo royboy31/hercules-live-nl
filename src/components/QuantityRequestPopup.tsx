@@ -100,7 +100,7 @@ export default function QuantityRequestPopup({
 
     // Check file count
     if (formData.files.length + files.length > maxFiles) {
-      setError(`Maximum ${maxFiles} fichiers autorisés.`);
+      setError(`Maximaal ${maxFiles} bestanden toegestaan.`);
       return;
     }
 
@@ -108,12 +108,12 @@ export default function QuantityRequestPopup({
     let totalSize = formData.files.reduce((sum, f) => sum + f.size, 0);
     const validFiles = files.filter(file => {
       if (!allowedTypes.includes(file.type)) {
-        setError(`Type de fichier invalide : ${file.name}. Seuls JPG, PNG et PDF sont acceptés.`);
+        setError(`Ongeldig bestandstype: ${file.name}. Alleen JPG, PNG en PDF worden aanvaard.`);
         return false;
       }
       totalSize += file.size;
       if (totalSize > maxTotalSize) {
-        setError('Taille totale maximale de 20 Mo dépassée.');
+        setError('Maximale totale grootte van 20 MB overschreden.');
         return false;
       }
       return true;
@@ -137,7 +137,7 @@ export default function QuantityRequestPopup({
 
     // Validation
     if (!formData.firstName || !formData.lastName || !formData.email) {
-      setError('Veuillez remplir tous les champs obligatoires marqués d\'un *');
+      setError('Vul alle verplichte velden in (aangeduid met een *)');
       return;
     }
 
@@ -152,7 +152,7 @@ export default function QuantityRequestPopup({
         .join(', ');
 
       // Format addons as readable string (same logic as ExpressDeliveryPopup)
-      const SKIP_ADDON_VALUES = ['aucun', 'none', 'n/a', '-', ''];
+      const SKIP_ADDON_VALUES = ['aucun', 'geen', 'none', 'n/a', '-', ''];
       const addonsStr = [...new Set(
         Object.entries(selectedAddons)
           .filter(([_, value]) => value)
@@ -200,7 +200,7 @@ export default function QuantityRequestPopup({
       pushGenerateLead('contact');
       setIsSuccess(true);
     } catch (err) {
-      setError('Une erreur est survenue. Veuillez réessayer.');
+      setError('Er is een fout opgetreden. Probeer het opnieuw.');
     } finally {
       setIsSubmitting(false);
     }
@@ -229,7 +229,7 @@ export default function QuantityRequestPopup({
             type="button"
             onClick={onClose}
             className="kd-quantity-popup-close"
-            aria-label="Fermer"
+            aria-label="Sluiten"
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="18" y1="6" x2="6" y2="18" />
@@ -239,11 +239,11 @@ export default function QuantityRequestPopup({
 
           {!isSuccess ? (
             <>
-              <h4>DEMANDE DE QUANTITÉ PERSONNALISÉE</h4>
+              <h4>AANVRAAG VOOR EEN AANGEPAST AANTAL</h4>
               <p>
-                Vous avez sélectionné une quantité supérieure au maximum standard.
-                Veuillez nous contacter pour organiser une commande personnalisée
-                ou recevoir un devis urgent.
+                U hebt een aantal gekozen dat hoger ligt dan het standaardmaximum.
+                Neem contact met ons op voor een bestelling op maat
+                of een dringende offerte.
               </p>
 
               <form onSubmit={handleSubmit}>
@@ -251,12 +251,12 @@ export default function QuantityRequestPopup({
                 <div className="kd-row">
                   <div className="kd-col-50">
                     <label>
-                      Prénom <span style={{ color: 'red' }}>*</span>
+                      Voornaam <span style={{ color: 'red' }}>*</span>
                     </label>
                     <input
                       type="text"
                       name="firstName"
-                      placeholder="Prénom"
+                      placeholder="Voornaam"
                       value={formData.firstName}
                       onChange={handleInputChange}
                       required
@@ -264,12 +264,12 @@ export default function QuantityRequestPopup({
                   </div>
                   <div className="kd-col-50">
                     <label>
-                      Nom <span style={{ color: 'red' }}>*</span>
+                      Achternaam <span style={{ color: 'red' }}>*</span>
                     </label>
                     <input
                       type="text"
                       name="lastName"
-                      placeholder="Nom"
+                      placeholder="Achternaam"
                       value={formData.lastName}
                       onChange={handleInputChange}
                       required
@@ -293,11 +293,11 @@ export default function QuantityRequestPopup({
                     />
                   </div>
                   <div className="kd-col-50">
-                    <label>Numéro de téléphone</label>
+                    <label>Telefoonnummer</label>
                     <input
                       type="tel"
                       name="phone"
-                      placeholder="Numéro de téléphone"
+                      placeholder="Telefoonnummer"
                       value={formData.phone}
                       onChange={handleInputChange}
                     />
@@ -307,10 +307,10 @@ export default function QuantityRequestPopup({
                 {/* Message */}
                 <div className="kd-row">
                   <div className="kd-col-100">
-                    <label>Message</label>
+                    <label>Bericht</label>
                     <textarea
                       name="message"
-                      placeholder="Votre message"
+                      placeholder="Uw bericht"
                       value={formData.message}
                       onChange={handleInputChange}
                     />
@@ -320,7 +320,7 @@ export default function QuantityRequestPopup({
                 {/* File Upload */}
                 <div className="kd-col-100 kd-file-upload-section">
                   <label>
-                    Joindre des fichiers (JPG, PNG, PDF — max. 10 fichiers, 20 Mo au total)
+                    Bestanden toevoegen (JPG, PNG, PDF — max. 10 bestanden, 20 MB in totaal)
                   </label>
                   <div className="kd-file-upload-wrapper">
                     <input
@@ -338,9 +338,9 @@ export default function QuantityRequestPopup({
                         <polyline points="17 8 12 3 7 8" />
                         <line x1="12" y1="3" x2="12" y2="15" />
                       </svg>
-                      <span>Sélectionner des fichiers</span>
+                      <span>Bestanden kiezen</span>
                     </label>
-                    <span className="kd-file-hint">Max. 20 Mo au total</span>
+                    <span className="kd-file-hint">Max. 20 MB in totaal</span>
                   </div>
                   {formData.files.length > 0 && (
                     <div className="kd-selected-files">
@@ -368,14 +368,14 @@ export default function QuantityRequestPopup({
                     onClick={onClose}
                     className="kd-quantity-cancel-btn"
                   >
-                    Annuler
+                    Annuleren
                   </button>
                   <button
                     type="submit"
                     disabled={isSubmitting}
                     className="kd-quantity-submit-btn"
                   >
-                    {isSubmitting ? 'Envoi en cours...' : 'Envoyer la demande'}
+                    {isSubmitting ? 'Bezig met verzenden...' : 'Aanvraag versturen'}
                   </button>
                 </div>
               </form>
@@ -389,16 +389,16 @@ export default function QuantityRequestPopup({
                   <polyline points="22 4 12 14.01 9 11.01" />
                 </svg>
               </div>
-              <h4>Merci de nous avoir contactés !</h4>
+              <h4>Bedankt voor uw bericht!</h4>
               <p>
-                Votre demande a bien été envoyée. Un membre de notre équipe vous répondra dans les plus brefs délais.
+                Uw aanvraag is goed verzonden. Een medewerker van ons team neemt zo snel mogelijk contact met u op.
               </p>
               <button
                 type="button"
                 onClick={onClose}
                 className="kd-quantity-submit-btn"
               >
-                Fermer
+                Sluiten
               </button>
             </div>
           )}

@@ -48,7 +48,7 @@ function loadScrapedData(): any {
 const FALLBACK_DATA: GooglePlaceData = {
   rating: 4.9,
   reviewCount: 179,
-  name: 'Hercules Merchandising FR',
+  name: 'Hercules Merchandise',
   url: MAPS_URL,
   reviews: staticReviewsData.reviews as GoogleReview[]
 };
@@ -97,7 +97,7 @@ export function formatRating(rating: number): string {
  */
 export function formatReviewCount(count: number): string {
   if (count >= 1000) {
-    return `${Math.floor(count / 1000)}k+ Reviews`;
+    return `${Math.floor(count / 1000)}k+ beoordelingen`;
   }
-  return `${count}+ Reviews`;
+  return `${count}+ beoordelingen`;
 }

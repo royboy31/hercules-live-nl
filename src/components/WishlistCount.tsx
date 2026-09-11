@@ -62,9 +62,9 @@ export default function WishlistCount({ className = '' }: WishlistCountProps) {
 
   return (
     <a
-      href="/liste-de-souhaits/"
+      href="/verlanglijst/"
       className={`header-icon wishlist-icon ${className}`}
-      aria-label="Wishlist"
+      aria-label="Verlanglijst"
       style={iconStyle}
     >
       <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none">

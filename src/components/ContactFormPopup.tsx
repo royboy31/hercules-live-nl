@@ -87,7 +87,7 @@ export default function ContactFormPopup({
 
     const validFiles = files.filter(file => {
       if (file.size > maxSize) {
-        setError(`Le fichier "${file.name}" est trop volumineux. Taille maximale : 10 Mo`);
+        setError(`Het bestand "${file.name}" is te groot. Maximale grootte: 10 MB`);
         return false;
       }
       return true;
@@ -149,7 +149,7 @@ export default function ContactFormPopup({
       setSubmittedData({ ...formData });
       setIsSuccess(true);
     } catch (err) {
-      setError('Une erreur est survenue. Veuillez réessayer.');
+      setError('Er is een fout opgetreden. Probeer het opnieuw.');
     } finally {
       setIsSubmitting(false);
     }
@@ -165,7 +165,7 @@ export default function ContactFormPopup({
           type="button"
           onClick={openPopup}
           className={`contact-trigger-icon ${baseClasses}`}
-          aria-label="Contactez-nous"
+          aria-label="Neem contact op"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 512 512" fill="currentColor">
             <path d="M464 64H48C21.49 64 0 85.49 0 112v288c0 26.51 21.49 48 48 48h416c26.51 0 48-21.49 48-48V112c0-26.51-21.49-48-48-48zm0 48v40.805c-22.422 18.259-58.168 46.651-134.587 106.49-16.841 13.247-50.201 45.072-73.413 44.701-23.208.375-56.579-31.459-73.413-44.701C106.18 199.465 70.425 171.067 48 152.805V112h416zM48 400V214.398c22.914 18.251 55.409 43.862 104.938 82.646 21.857 17.205 60.134 55.186 103.062 54.955 42.717.231 80.509-37.199 103.053-54.947 49.528-38.783 82.032-64.401 104.947-82.653V400H48z"/>
@@ -221,7 +221,7 @@ export default function ContactFormPopup({
               type="button"
               onClick={closePopup}
               className="contact-popup-close"
-              aria-label="Fermer"
+              aria-label="Sluiten"
             >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <line x1="18" y1="6" x2="6" y2="18" />
@@ -237,7 +237,7 @@ export default function ContactFormPopup({
                   <div className="contact-form-row">
                     <div className="contact-field contact-field-half">
                       <label htmlFor="contact-name" className="contact-label">
-                        Nom complet <span className="required">*</span>
+                        Volledige naam <span className="required">*</span>
                       </label>
                       <input
                         type="text"
@@ -245,7 +245,7 @@ export default function ContactFormPopup({
                         name="name"
                         value={formData.name}
                         onChange={handleInputChange}
-                        placeholder="Nom complet"
+                        placeholder="Volledige naam"
                         required
                         className="contact-input"
                       />
@@ -270,7 +270,7 @@ export default function ContactFormPopup({
                   {/* Phone */}
                   <div className="contact-field">
                     <label htmlFor="contact-phone" className="contact-label">
-                      Numéro de téléphone
+                      Telefoonnummer
                     </label>
                     <input
                       type="tel"
@@ -278,7 +278,7 @@ export default function ContactFormPopup({
                       name="phone"
                       value={formData.phone}
                       onChange={handleInputChange}
-                      placeholder="Numéro de téléphone"
+                      placeholder="Telefoonnummer"
                       className="contact-input"
                     />
                   </div>
@@ -286,14 +286,14 @@ export default function ContactFormPopup({
                   {/* Message */}
                   <div className="contact-field">
                     <label htmlFor="contact-message" className="contact-label">
-                      Message
+                      Bericht
                     </label>
                     <textarea
                       id="contact-message"
                       name="message"
                       value={formData.message}
                       onChange={handleInputChange}
-                      placeholder="Votre message"
+                      placeholder="Uw bericht"
                       rows={4}
                       className="contact-textarea"
                     />
@@ -302,7 +302,7 @@ export default function ContactFormPopup({
                   {/* File Upload */}
                   <div className="contact-field">
                     <label htmlFor="contact-files" className="contact-label">
-                      Joindre un fichier
+                      Bestand toevoegen
                     </label>
                     <div className="contact-file-upload">
                       <input
@@ -320,9 +320,9 @@ export default function ContactFormPopup({
                           <polyline points="17 8 12 3 7 8" />
                           <line x1="12" y1="3" x2="12" y2="15" />
                         </svg>
-                        <span>Sélectionner des fichiers</span>
+                        <span>Bestanden kiezen</span>
                       </label>
-                      <span className="contact-file-hint">Max. 10 Mo par fichier</span>
+                      <span className="contact-file-hint">Max. 10 MB per bestand</span>
                     </div>
 
                     {/* File List */}
@@ -335,7 +335,7 @@ export default function ContactFormPopup({
                               type="button"
                               onClick={() => removeFile(index)}
                               className="contact-file-remove"
-                              aria-label={`Supprimer ${file.name}`}
+                              aria-label={`${file.name} verwijderen`}
                             >
                               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <line x1="18" y1="6" x2="6" y2="18" />
@@ -366,10 +366,10 @@ export default function ContactFormPopup({
                         <svg className="contact-spinner" width="20" height="20" viewBox="0 0 24 24">
                           <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" fill="none" strokeDasharray="31.416" strokeDashoffset="10" />
                         </svg>
-                        <span>Envoi en cours...</span>
+                        <span>Bezig met verzenden...</span>
                       </>
                     ) : (
-                      <span>Envoyer</span>
+                      <span>Versturen</span>
                     )}
                   </button>
                 </div>
@@ -384,16 +384,16 @@ export default function ContactFormPopup({
                   </svg>
                 </div>
                 <h2 className="contact-success-title">
-                  Merci de<br />nous avoir contactés !
+                  Bedankt<br />voor uw bericht!
                 </h2>
                 <p className="contact-success-text">
-                  Votre message a bien été envoyé. Un membre de notre équipe vous répondra dans les plus brefs délais.
+                  Uw bericht is goed verzonden. Een medewerker van ons team neemt zo snel mogelijk contact met u op.
                 </p>
                 {submittedData && (
                   <div className="contact-success-details">
-                    <p><strong>Nom :</strong> {submittedData.name}</p>
-                    <p><strong>E-mail :</strong> {submittedData.email}</p>
-                    {submittedData.phone && <p><strong>Téléphone :</strong> {submittedData.phone}</p>}
+                    <p><strong>Naam:</strong> {submittedData.name}</p>
+                    <p><strong>E-mail:</strong> {submittedData.email}</p>
+                    {submittedData.phone && <p><strong>Telefoon:</strong> {submittedData.phone}</p>}
                   </div>
                 )}
                 <button
@@ -401,7 +401,7 @@ export default function ContactFormPopup({
                   onClick={closePopup}
                   className="contact-success-close"
                 >
-                  Fermer
+                  Sluiten
                 </button>
               </div>
             )}

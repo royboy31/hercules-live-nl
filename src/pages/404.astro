@@ -3,12 +3,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import ProductSearch from '../components/ProductSearch';
 ---
 
-<BaseLayout title="Erreur 404" description="La page demandée est introuvable." noindex={true}>
+<BaseLayout title="Fout 404" description="De gevraagde pagina werd niet gevonden." noindex={true}>
   <!-- Breadcrumbs -->
   <div class="breadcrumb-section">
     <div class="breadcrumb-container">
       <nav class="breadcrumb">
-        <a href="/">Accueil</a>
+        <a href="/">Home</a>
         <span class="separator">
           <img src="/images/breadcrumb-separator.svg" alt="" width="7" height="12" />
         </span>
@@ -20,8 +20,8 @@ import ProductSearch from '../components/ProductSearch';
   <!-- 404 Content -->
   <section class="page-404">
     <h1 class="typing">404</h1>
-    <p class="typing-text">Oups ! La page que vous recherchez n'existe pas…</p>
-    <a href="/" class="back-home">Retour à l'accueil</a>
+    <p class="typing-text">Oeps! De pagina die u zoekt, bestaat niet…</p>
+    <a href="/" class="back-home">Terug naar de homepage</a>
 
     <!-- Product Search -->
     <div class="search-wrapper">

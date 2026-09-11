@@ -6,38 +6,38 @@ const currentYear = new Date().getFullYear();
 
 const footerColumns = [
   {
-    heading: 'Entreprise',
+    heading: 'Bedrijf',
     links: [
-      { label: 'À propos de nous', href: '/a-propos/' },
-      { label: 'Notre équipe', href: '/notre-equipe/' },
+      { label: 'Over ons', href: '/over-ons/' },
+      { label: 'Ons team', href: '/ons-team/' },
       { label: 'Blog', href: '/blogs/news/' },
-      { label: 'Livraisons et retours', href: '/livraisons-et-retours/' },
-      { label: 'Moyens de paiement', href: '/moyens-de-paiement/' },
-      { label: 'Contact', href: '/contactez-nous/' },
-      { label: 'Mon compte', href: '/mon-compte/' },
+      { label: 'Levering en retour', href: '/levering-en-retour/' },
+      { label: 'Betaalmethoden', href: '/betaalmethoden/' },
+      { label: 'Contact', href: '/contact/' },
+      { label: 'Mijn account', href: '/mijn-account/' },
     ],
   },
   {
-    heading: 'Produits',
+    heading: 'Producten',
     links: [
-      { label: 'Écharpes', href: '/collections/echarpes-personnalisees/' },
-      { label: 'Bonnets', href: '/collections/bonnets-personnalises-football/' },
-      { label: 'Couvre-chefs', href: '/collections/couvre-chefs/' },
-      { label: 'Vêtements de sport', href: '/collections/equipements-personnalises/' },
-      { label: 'Fanions', href: '/collections/fanions-personnalises-football/' },
-      { label: 'Accessoires', href: '/collections/accessoires-de-football/' },
+      { label: 'Sjaals', href: '/collections/sjaals-bedrukken/' },
+      { label: 'Mutsen', href: '/collections/muts-bedrukken/' },
+      { label: 'Hoofddeksels', href: '/collections/hoofddeksels/' },
+      { label: 'Sportkleding', href: '/collections/sportshirts-bedrukken/' },
+      { label: 'Vaantjes', href: '/collections/vaantjes-bedrukken/' },
+      { label: 'Accessoires', href: '/collections/accessoires/' },
       { label: 'Tifo', href: '/collections/tifo/' },
     ],
   },
   {
     heading: 'Sports',
     links: [
-      { label: 'Football', href: '/collections/football/' },
+      { label: 'Voetbal', href: '/collections/voetbal/' },
       { label: 'Rugby', href: '/collections/rugby/' },
-      { label: 'Basket-ball', href: '/collections/basket-ball/' },
+      { label: 'Basketbal', href: '/collections/basketbal/' },
       { label: 'Running', href: '/collections/running/' },
-      { label: 'Cyclisme', href: '/collections/cyclisme/' },
-      { label: 'Volleyball', href: '/collections/volleyball/' },
+      { label: 'Wielrennen', href: '/collections/wielrennen/' },
+      { label: 'Volleybal', href: '/collections/volleybal/' },
       { label: 'Fitness', href: '/collections/fitness/' },
     ],
   },
@@ -70,22 +70,22 @@ const phones = [
           <span class="banner-icon-badge">%</span>
         </div>
         <div class="banner-text">
-          <h2 class="banner-heading">Revendeur ou club professionnel ?</h2>
-          <p class="banner-description">Devenez partenaire et bénéficiez de tarifs exclusifs, d'un accompagnement dédié et de livraisons fiables pour vos commandes en gros.</p>
+          <h2 class="banner-heading">Wederverkoper of professionele club?</h2>
+          <p class="banner-description">Word partner en geniet van exclusieve tarieven, persoonlijke begeleiding en betrouwbare leveringen voor uw bestellingen in grote aantallen.</p>
         </div>
       </div>
       <div class="banner-features">
         <div class="banner-feature">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><path d="M243.31,136,144,36.69A15.86,15.86,0,0,0,132.69,32H40a8,8,0,0,0-8,8v92.69A15.86,15.86,0,0,0,36.69,144L136,243.31a16,16,0,0,0,22.63,0l84.68-84.68a16,16,0,0,0,0-22.63Zm-96,96L48,132.69V48h84.69L232,147.31ZM96,84A12,12,0,1,1,84,72,12,12,0,0,1,96,84Z"></path></svg>
-          <span>Tarifs de gros exclusifs</span>
+          <span>Exclusieve groothandelsprijzen</span>
         </div>
         <div class="banner-feature">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><path d="M201.89,54.66A103.43,103.43,0,0,0,128.79,24H128A104,104,0,0,0,24,128v56a24,24,0,0,0,24,24H64a24,24,0,0,0,24-24V144a24,24,0,0,0-24-24H40.36A88.12,88.12,0,0,1,190.54,65.93,87.39,87.39,0,0,1,215.65,120H192a24,24,0,0,0-24,24v40a24,24,0,0,0,24,24h24a24,24,0,0,1-24,24H136a8,8,0,0,0,0,16h56a40,40,0,0,0,40-40V128A103.41,103.41,0,0,0,201.89,54.66ZM64,136a8,8,0,0,1,8,8v40a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V136Zm128,56a8,8,0,0,1-8-8V144a8,8,0,0,1,8-8h24v56Z"></path></svg>
-          <span>Accompagnement dédié</span>
+          <span>Persoonlijke begeleiding</span>
         </div>
       </div>
       <div class="banner-cta">
-        <ContactFormPopup client:visible triggerType="button" triggerText="Contactez notre équipe" triggerClassName="banner-cta-popup" />
+        <ContactFormPopup client:visible triggerType="button" triggerText="Contacteer ons team" triggerClassName="banner-cta-popup" />
         <div class="banner-phone">
           {phones.map((phone) => (
             <a href={`tel:${phone.tel}`}>
@@ -107,14 +107,14 @@ const phones = [
           <img
             src="/images/hercules-logo-original1.webp"
             srcset="/images/hercules-logo-original1.webp 1x, /images/hercules-logo-original1-2x.webp 2x"
-            alt="Hercules Merchandising"
+            alt="Hercules Merchandise"
             class="footer-logo"
             loading="lazy"
             width="176"
             height="78"
           />
         </a>
-        <p class="footer-tagline">Du merchandising et des vêtements de qualité pour les clubs, les supporters et les équipes en France et au-delà.</p>
+        <p class="footer-tagline">Kwaliteitsmerchandise en -kleding voor clubs, supporters en ploegen in België, Nederland en daarbuiten.</p>
       </div>
 
       {footerColumns.map((col) => (
@@ -130,7 +130,7 @@ const phones = [
 
       <!-- Help / Contact Column -->
       <div class="footer-column help-column">
-        <h3 class="footer-heading">Aide / Contact</h3>
+        <h3 class="footer-heading">Hulp / Contact</h3>
         <div class="footer-phone">
           {phones.map((phone) => (
             <a href={`tel:${phone.tel}`}>
@@ -141,7 +141,7 @@ const phones = [
         </div>
         {activeSocialLinks.length > 0 && (
         <Fragment>
-        <h3 class="footer-heading follow-heading">Suivez-nous</h3>
+        <h3 class="footer-heading follow-heading">Volg ons</h3>
         <div class="social-icons">
           {activeSocialLinks.map((social) => (
             <a href={social.href} class="social-icon" aria-label={social.label} target="_blank" rel="noopener">
@@ -162,7 +162,7 @@ const phones = [
         </div>
         </Fragment>
         )}
-        <ContactFormPopup client:visible triggerType="button" triggerText="Contactez-nous" triggerClassName="footer-cta-popup" />
+        <ContactFormPopup client:visible triggerType="button" triggerText="Contacteer ons" triggerClassName="footer-cta-popup" />
       </div>
     </div>
   </div>
@@ -173,17 +173,17 @@ const phones = [
       <!-- Row 1: Legal links, Payment icons, Language switcher -->
       <div class="bottom-footer-row">
         <div class="legal-links">
-          <a href="/conditions-generales-de-vente/">Conditions Générales de Vente</a>
-          <a href="/politique-de-confidentialite-et-de-cookies/">Politique de confidentialité et de cookies</a>
-          <a href="/mentions-legales/">Mentions légales</a>
+          <a href="/algemene-voorwaarden/">Algemene voorwaarden</a>
+          <a href="/privacy-en-cookiebeleid/">Privacy- en cookiebeleid</a>
+          <a href="/juridische-informatie/">Juridische informatie</a>
         </div>
         <div class="payment-icons">
-          <img src="/images/pay-her-2.png" alt="Moyens de paiement" loading="lazy" width="300" height="30" />
+          <img src="/images/pay-her-2.png" alt="Betaalmethoden" loading="lazy" width="300" height="30" />
         </div>
         <div class="language-switcher">
           <button class="language-current" type="button">
-<img src="/images/flags/fr-flag.png" alt="Drapeau français - Langue actuelle" width="24" height="24" loading="lazy" />
-            <span>France</span>
+<img src="/images/flags/fr-flag.png" alt="Franse vlag - huidige taal" width="24" height="24" loading="lazy" />
+            <span>Frankrijk</span>
             <svg class="dropdown-arrow" width="10" height="6" viewBox="0 0 10 6" fill="none">
               <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
@@ -191,20 +191,20 @@ const phones = [
           <ul class="language-dropdown">
             <li>
               <a href="https://hercules-merchandise.co.uk/" target="_blank">
-<img src="/images/flags/uk-flag.png" alt="Drapeau britannique - Site Royaume-Uni" width="24" height="24" loading="lazy" />
-                <span>Royaume-Uni</span>
+<img src="/images/flags/uk-flag.png" alt="Britse vlag - website Verenigd Koninkrijk" width="24" height="24" loading="lazy" />
+                <span>Verenigd Koninkrijk</span>
               </a>
             </li>
             <li>
               <a href="https://www.hercules-merchandise.nl/" target="_blank">
-<img src="/images/flags/nl-flag.png" alt="Drapeau néerlandais - Site Pays-Bas" width="24" height="24" loading="lazy" />
-                <span>Pays-Bas</span>
+<img src="/images/flags/nl-flag.png" alt="Nederlandse vlag - website Nederland" width="24" height="24" loading="lazy" />
+                <span>Nederland</span>
               </a>
             </li>
             <li>
               <a href="https://hercules-merchandise.de/" target="_blank">
-<img src="/images/german.png" alt="Drapeau allemand - Site Allemagne" width="24" height="24" loading="lazy" />
-                <span>Allemagne</span>
+<img src="/images/german.png" alt="Duitse vlag - website Duitsland" width="24" height="24" loading="lazy" />
+                <span>Duitsland</span>
               </a>
             </li>
           </ul>
@@ -212,7 +212,7 @@ const phones = [
       </div>
       <!-- Row 2: Copyright -->
       <div class="copyright">
-        &copy; {currentYear} Be Ventures SRL, exploitant le site sous le nom commercial Hercules Merchandising. Tous droits réservés.
+        &copy; {currentYear} Be Ventures SRL, die de website uitbaat onder de handelsnaam Hercules Merchandise. Alle rechten voorbehouden.
       </div>
     </div>
   </div>

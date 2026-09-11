@@ -3,16 +3,16 @@
 
 export const siteConfig = {
   // Site Info
-  siteName: 'Hercules Merchandising FR',
-  siteUrl: 'https://hercules-merchandising.fr',
+  siteName: 'Hercules Merchandise',
+  siteUrl: 'https://hercules-merchandise.nl',
   titleSeparator: '-',
-  defaultDescription: 'Personalised sportswear, fan scarves and merchandise for clubs and teams. Made in Europe.',
-  locale: 'fr_FR',
-  language: 'fr',
+  defaultDescription: 'Sportkleding op maat, supporterssjaals en merchandise voor clubs en ploegen. Gemaakt in Europa.',
+  locale: 'nl_BE',
+  language: 'nl',
 
   // Organization/Business Info
   organization: {
-    name: 'Hercules Merchandising FR',
+    name: 'Hercules Merchandise',
     legalName: 'Be Ventures SRL',
     type: 'Organization',
     email: 'info@hercules-merchandising.fr',
@@ -71,11 +71,11 @@ export const titleTemplates = {
   category: (term: string) => `${term} ${siteConfig.titleSeparator} ${siteConfig.siteName}`,
   blogPost: (title: string) => `${title} ${siteConfig.titleSeparator} ${siteConfig.siteName}`,
   blogArchive: (page?: number) => page && page > 1
-    ? `Blog Page ${page} ${siteConfig.titleSeparator} ${siteConfig.siteName}`
+    ? `Blog pagina ${page} ${siteConfig.titleSeparator} ${siteConfig.siteName}`
     : `Blog ${siteConfig.titleSeparator} ${siteConfig.siteName}`,
   page: (title: string) => `${title} ${siteConfig.titleSeparator} ${siteConfig.siteName}`,
-  search: (query: string) => `Search: ${query} ${siteConfig.titleSeparator} ${siteConfig.siteName}`,
-  notFound: `Page not found ${siteConfig.titleSeparator} ${siteConfig.siteName}`,
+  search: (query: string) => `Zoeken: ${query} ${siteConfig.titleSeparator} ${siteConfig.siteName}`,
+  notFound: `Pagina niet gevonden ${siteConfig.titleSeparator} ${siteConfig.siteName}`,
 };
 
 // Meta description templates
@@ -98,7 +98,7 @@ export const noindexPages = [
   '/search',
   '/cart',
   '/checkout',
-  '/mon-compte',
+  '/mijn-account',
 ];
 
 // Generate Organization JSON-LD

@@ -16,14 +16,13 @@ interface Env {
 const NO_CACHE_PATHS = [
   '/cart',
   '/checkout',
-  '/panier',
-  '/commande',
-  '/paiement',
-  '/validation-de-la-commande',
+  '/winkelwagen',
+  '/afrekenen',
+  '/bestelling-ontvangen',
   '/thank-you',
-  '/merci',
-  '/mon-compte',
-  '/generateur-de-devis',
+  '/bedankt',
+  '/mijn-account',
+  '/offerte-generator',
   '/wp-admin',
   '/wp-login.php',
   '/wp-json',
@@ -32,18 +31,17 @@ const NO_CACHE_PATHS = [
 
 // Paths that should go to WordPress
 const WORDPRESS_PATHS = [
-  // Shop & Cart & Checkout (French slugs - FR site)
+  // Shop & Cart & Checkout (Dutch slugs - NL site)
   '/cart',
   '/checkout',
-  '/panier',
-  '/commande',
-  '/paiement',               // WooCommerce payment page (FR)
-  '/validation-de-la-commande', // WooCommerce order received (FR)
+  '/winkelwagen',
+  '/afrekenen',              // WooCommerce checkout page (NL)
+  '/bestelling-ontvangen',   // order received page (NL)
   '/thank-you',
-  '/merci',
+  '/bedankt',
 
-  // Account (French slug only - /my-account redirects to /mon-compte)
-  '/mon-compte',
+  // Account (Dutch slug only - /my-account redirects to /mijn-account)
+  '/mijn-account',
 
   // WordPress Core
   '/wp-admin',
@@ -62,18 +60,71 @@ const WORDPRESS_PATHS = [
   '/buy',  // Astro links here for actual purchase - routes to WordPress /products/
 
   // Quote page (served by WordPress)
-  '/generateur-de-devis',
+  '/offerte-generator',
 ];
 
-// Paths that should always go to Astro - French
+// Paths that should always go to Astro - Dutch
 const ASTRO_PATHS = [
   '/',
-  '/boutique',           // Shop index page (Astro)
+  '/winkel',             // Shop index page (Astro)
   '/collections',
   '/blogs/news',
   '/products',           // Product detail pages (Astro version)
-  '/liste-de-souhaits',  // Wishlist page (localStorage-based, no WordPress)
+  '/verlanglijst',       // Wishlist page (localStorage-based, no WordPress)
 ];
+
+// 301s onto the Dutch URL structure, matched on the path without its trailing slash:
+// English and French page slugs the site inherited, and the Shopify NL store's pages that
+// have ranking history. Product and collection handles from Shopify that kept their name
+// need no entry; the ones that changed are listed here.
+const PAGE_REDIRECTS: Record<string, string> = {
+  // English
+  '/quote-generator': '/offerte-generator/',
+  '/about': '/over-ons/',
+  '/about-us': '/over-ons/',
+  '/contact-us': '/contact/',
+  '/wishlist': '/verlanglijst/',
+  '/deliveries-and-returns': '/levering-en-retour/',
+  '/delivery-and-returns': '/levering-en-retour/',
+  '/payment-methods': '/betaalmethoden/',
+  '/legal-notice': '/juridische-informatie/',
+  '/terms-of-service': '/algemene-voorwaarden/',
+  '/terms-and-conditions': '/algemene-voorwaarden/',
+  '/privacy-policy': '/privacy-en-cookiebeleid/',
+  '/my-account': '/mijn-account/',
+  '/collections/football-scarves': '/collections/voetbalsjaals-bedrukken/',
+  '/collections/fan-items': '/collections/supportersartikelen/',
+  '/collections/basketball': '/collections/basketbal/',
+  '/collections/teamwear': '/collections/sportshirts-bedrukken/',
+  // French (inherited from the FR site this one was cloned from)
+  '/panier': '/winkelwagen/',
+  '/paiement': '/afrekenen/',
+  '/mon-compte': '/mijn-account/',
+  '/generateur-de-devis': '/offerte-generator/',
+  '/merci': '/bedankt/',
+  '/a-propos': '/over-ons/',
+  '/notre-equipe': '/ons-team/',
+  '/contactez-nous': '/contact/',
+  '/boutique': '/winkel/',
+  '/boutique-2': '/winkel/',
+  '/boutique-new': '/winkel/',
+  '/liste-de-souhaits': '/verlanglijst/',
+  '/conditions-generales-de-vente': '/algemene-voorwaarden/',
+  '/conditions-generales-dutilisation': '/algemene-voorwaarden/',
+  '/politique-de-confidentialite': '/privacy-en-cookiebeleid/',
+  '/politique-de-confidentialite-et-de-cookies': '/privacy-en-cookiebeleid/',
+  '/mentions-legales': '/juridische-informatie/',
+  '/moyens-de-paiement': '/betaalmethoden/',
+  '/livraisons-et-retours': '/levering-en-retour/',
+  '/pages/livraisons-et-retours': '/levering-en-retour/',
+  // Shopify NL store
+  '/pages/contact': '/contact/',
+  '/pages/over-ons': '/over-ons/',
+  '/pages/betaalmogelijkheden': '/betaalmethoden/',
+  '/blogs/mutsen': '/blogs/news/',
+  '/collections/all': '/winkel/',
+  '/products/sporttas-1': '/products/sporttas-op-maat/',
+};
 
 // Obsolete Shopify-era / product-recommendation / attribute params that only spawn duplicate
 // crawl URLs. Allowlist by design: a param not named here is passed through untouched, so
@@ -156,9 +207,10 @@ export default {
       }
     }
 
-    // Redirect /boutique-new → /boutique (migrated to Astro)
-    if (pathname === '/boutique-new' || pathname === '/boutique-new/') {
-      return Response.redirect(new URL('/boutique/', url.origin).toString(), 301);
+    // 301s onto the Dutch URL structure (see PAGE_REDIRECTS)
+    const redirectTarget = PAGE_REDIRECTS[pathname.replace(/\/+$/, '') || '/'];
+    if (redirectTarget) {
+      return Response.redirect(new URL(redirectTarget + search, url.origin).toString(), 301);
     }
 
     // Debug endpoint to check what cookies Edge Router receives
@@ -332,66 +384,7 @@ export default {
       return Response.redirect(new URL(`/collections/${slug}/`, url.origin).toString(), 301);
     }
 
-    // Old English quote URL -> French
-    if (pathname === '/quote-generator' || pathname === '/quote-generator/') {
-      return Response.redirect(new URL('/generateur-de-devis/', url.origin).toString(), 301);
-    }
-
-    // Old English page slugs -> French slugs
-    if (pathname === '/about' || pathname === '/about/' || pathname === '/about-us' || pathname === '/about-us/') {
-      return Response.redirect(new URL('/a-propos/', url.origin).toString(), 301);
-    }
-    if (pathname === '/contact' || pathname === '/contact/' || pathname === '/contact-us' || pathname === '/contact-us/') {
-      return Response.redirect(new URL('/contactez-nous/', url.origin).toString(), 301);
-    }
-    if (pathname === '/wishlist' || pathname === '/wishlist/') {
-      return Response.redirect(new URL('/liste-de-souhaits/', url.origin).toString(), 301);
-    }
-    if (pathname === '/deliveries-and-returns' || pathname === '/deliveries-and-returns/' ||
-        pathname === '/delivery-and-returns' || pathname === '/delivery-and-returns/') {
-      return Response.redirect(new URL('/livraisons-et-retours/', url.origin).toString(), 301);
-    }
-    if (pathname === '/payment-methods' || pathname === '/payment-methods/') {
-      return Response.redirect(new URL('/moyens-de-paiement/', url.origin).toString(), 301);
-    }
-    if (pathname === '/legal-notice' || pathname === '/legal-notice/') {
-      return Response.redirect(new URL('/mentions-legales/', url.origin).toString(), 301);
-    }
-    if (pathname === '/terms-of-service' || pathname === '/terms-of-service/' ||
-        pathname === '/terms-and-conditions' || pathname === '/terms-and-conditions/' ||
-        pathname === '/conditions-generales-dutilisation' || pathname === '/conditions-generales-dutilisation/') {
-      return Response.redirect(new URL('/conditions-generales-de-vente/', url.origin).toString(), 301);
-    }
-    if (pathname === '/privacy-policy' || pathname === '/privacy-policy/' ||
-        pathname === '/politique-de-confidentialite' || pathname === '/politique-de-confidentialite/') {
-      return Response.redirect(new URL('/politique-de-confidentialite-et-de-cookies/', url.origin).toString(), 301);
-    }
-    if (pathname === '/my-account' || pathname === '/my-account/') {
-      return Response.redirect(new URL('/mon-compte/', url.origin).toString(), 301);
-    }
-
-    // Old English collection slugs -> French slugs
-    if (pathname === '/collections/football-scarves' || pathname === '/collections/football-scarves/') {
-      return Response.redirect(new URL('/collections/echarpes-de-football/', url.origin).toString(), 301);
-    }
-    if (pathname === '/collections/fan-items' || pathname === '/collections/fan-items/') {
-      return Response.redirect(new URL('/collections/articles-de-supporters/', url.origin).toString(), 301);
-    }
-    if (pathname === '/collections/basketball' || pathname === '/collections/basketball/') {
-      return Response.redirect(new URL('/collections/basket-ball/', url.origin).toString(), 301);
-    }
-    if (pathname === '/collections/teamwear' || pathname === '/collections/teamwear/') {
-      return Response.redirect(new URL('/collections/tenues-de-sport/', url.origin).toString(), 301);
-    }
-
-    // Old slug redirects
-    if (pathname === '/pages/livraisons-et-retours' || pathname === '/pages/livraisons-et-retours/' ||
-        pathname.startsWith('/pages/livraisons-et-retours#')) {
-      return Response.redirect(new URL('/livraisons-et-retours/', url.origin).toString(), 301);
-    }
-    if (pathname === '/boutique-2' || pathname === '/boutique-2/') {
-      return Response.redirect(new URL('/boutique/', url.origin).toString(), 301);
-    }
+    // Old page/collection slugs: see PAGE_REDIRECTS, handled at the top
     if (pathname === '/blogs/news/category/blogs' || pathname === '/blogs/news/category/blogs/') {
       return Response.redirect(new URL('/blogs/news/', url.origin).toString(), 301);
     }
@@ -460,7 +453,7 @@ export default {
         const checkResp = await fetch(checkUrl);
         if (!checkResp.ok) {
           // Product is missive-only or not found - return 404
-          return new Response('<!DOCTYPE html><html><head><meta charset="UTF-8"><meta http-equiv="refresh" content="0;url=/404/"><title>Page non trouvée</title></head><body><p>Produit non trouvé</p></body></html>', {
+          return new Response('<!DOCTYPE html><html lang="nl"><head><meta charset="UTF-8"><meta http-equiv="refresh" content="0;url=/404/"><title>Pagina niet gevonden</title></head><body><p>Product niet gevonden</p></body></html>', {
             status: 404,
             headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' },
           });

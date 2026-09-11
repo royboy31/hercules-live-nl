@@ -29,7 +29,7 @@ function cleanTitle(title: string): string {
 // Format date for display
 function formatDate(dateStr: string) {
   const date = new Date(dateStr);
-  return date.toLocaleDateString('fr-FR', {
+  return date.toLocaleDateString('nl-BE', {
     year: 'numeric',
     month: 'long',
     day: 'numeric'
@@ -38,7 +38,7 @@ function formatDate(dateStr: string) {
 
 // SEO configuration
 const pageTitle = 'Blog';
-const pageDescription = 'Découvrez les dernières actualités, conseils et articles sur les écharpes de supporters personnalisées, le merchandising et bien plus encore.';
+const pageDescription = 'Ontdek het laatste nieuws, tips en artikels over supporterssjaals op maat, merchandise en nog veel meer.';
 const canonicalUrl = `${siteConfig.siteUrl}/blogs/news`;
 
 // Generate JSON-LD schemas
@@ -71,7 +71,7 @@ jsonLdSchemas.push(getBreadcrumbSchema([
         <ol itemscope itemtype="https://schema.org/BreadcrumbList">
           <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
             <a href="/" itemprop="item">
-              <span itemprop="name">Accueil</span>
+              <span itemprop="name">Home</span>
             </a>
             <meta itemprop="position" content="1" />
             <span class="separator"><img src="/images/breadcrumb-separator.svg" alt="" width="6" height="12" /></span>
@@ -112,7 +112,7 @@ jsonLdSchemas.push(getBreadcrumbSchema([
                 <time class="post-date">{formatDate(post.date)}</time>
                 <h2 class="post-title">{cleanTitle(post.title)}</h2>
                 <p class="post-excerpt">{post.excerpt}</p>
-                <span class="read-more">Lire la suite</span>
+                <span class="read-more">Lees meer</span>
               </div>
             </a>
           </article>

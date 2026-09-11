@@ -385,7 +385,7 @@ export default function UserSession({ type }: UserSessionProps) {
         <button
           onClick={handleCartClick}
           className="header-icon cart-icon"
-          aria-label="Cart"
+          aria-label="Winkelwagen"
           aria-expanded={showCartDropdown}
           style={iconStyle}
         >
@@ -404,7 +404,7 @@ export default function UserSession({ type }: UserSessionProps) {
           <div style={dropdownStyle} className="cart-dropdown">
             {count === 0 ? (
               <div style={emptyCartStyle}>
-                <p style={{ margin: 0 }}>Votre panier est vide.</p>
+                <p style={{ margin: 0 }}>Uw winkelwagen is leeg.</p>
               </div>
             ) : (
               <>
@@ -449,8 +449,8 @@ export default function UserSession({ type }: UserSessionProps) {
                         onMouseLeave={(e) => {
                           e.currentTarget.style.color = '#999';
                         }}
-                        aria-label={`Supprimer ${item.name}`}
-                        title="Supprimer l'article"
+                        aria-label={`${item.name} verwijderen`}
+                        title="Artikel verwijderen"
                       >
                         {removingItem === item.key ? '...' : '×'}
                       </button>
@@ -460,7 +460,7 @@ export default function UserSession({ type }: UserSessionProps) {
 
                 {/* Subtotal */}
                 <div style={subtotalRowStyle}>
-                  <span>Sous-total :</span>
+                  <span>Subtotaal:</span>
                   {distDiscount > 0 ? (
                     <strong>
                       <s style={distStrikeStyle}>{subtotal}</s>{' '}
@@ -474,7 +474,7 @@ export default function UserSession({ type }: UserSessionProps) {
                 {/* Buttons */}
                 <div style={buttonsContainerStyle}>
                   <a
-                    href="/generateur-de-devis/"
+                    href="/offerte-generator/"
                     style={viewCartBtnStyle}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.background = '#469adc';
@@ -485,10 +485,10 @@ export default function UserSession({ type }: UserSessionProps) {
                       e.currentTarget.style.color = '#469adc';
                     }}
                   >
-                    Générateur de devis
+                    Offerte-generator
                   </a>
                   <a
-                    href="/panier/"
+                    href="/winkelwagen/"
                     style={checkoutBtnStyle}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.background = 'transparent';
@@ -499,7 +499,7 @@ export default function UserSession({ type }: UserSessionProps) {
                       e.currentTarget.style.color = '#fff';
                     }}
                   >
-                    Voir le panier
+                    Winkelwagen bekijken
                   </a>
                 </div>
               </>
@@ -512,7 +512,7 @@ export default function UserSession({ type }: UserSessionProps) {
 
   // Account link with user state
   if (type === 'account') {
-    const accountUrl = '/mon-compte/';
+    const accountUrl = '/mijn-account/';
 
     // Full icon styles to match WordPress exactly
     const iconStyle: React.CSSProperties = {
@@ -549,8 +549,8 @@ export default function UserSession({ type }: UserSessionProps) {
       <a
         href={accountUrl}
         className="header-icon"
-        aria-label={isLoggedIn ? `Hello, ${user?.first_name || user?.name}` : 'My Account'}
-        title={isLoggedIn ? `Hello, ${user?.first_name || user?.name}` : 'Sign in'}
+        aria-label={isLoggedIn ? `Hallo, ${user?.first_name || user?.name}` : 'Mijn account'}
+        title={isLoggedIn ? `Hallo, ${user?.first_name || user?.name}` : 'Aanmelden'}
         style={iconStyle}
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 29 29" fill="none">

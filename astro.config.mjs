@@ -52,10 +52,10 @@ try {
   console.warn('Sitemap lastmod: failed to fetch dates, using build date as fallback', e);
 }
 
-// Hercules FR Configuration
+// Hercules NL Configuration
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://hercules-merchandising.fr',
+  site: 'https://hercules-merchandise.nl',
   trailingSlash: 'always',
   build: {
     // 'auto' inlines small CSS, links larger bundles externally
@@ -101,15 +101,16 @@ export default defineConfig({
         const excludePatterns = [
           '/cart',
           '/checkout',
-          '/my-account',
-          '/quote-generator',
-          '/generateur-de-devis',
+          '/winkelwagen',
+          '/afrekenen',
+          '/mijn-account',
+          '/offerte-generator',
           '/search',
           '/api/',
-          '/liste-de-souhaits',
-          '/collections/non-categorise',
+          '/verlanglijst',
+          '/collections/niet-gecategoriseerd',
           '/collections/uncategorized',
-          '/collections/equipe-nationale',
+          '/collections/nationale-ploeg',
           '/design-by-perelweb',
         ];
         return !excludePatterns.some(pattern => page.includes(pattern));
@@ -123,7 +124,7 @@ export default defineConfig({
         const lastmod = lastmodMap.get(path) || buildDate;
 
         // Higher priority for homepage
-        if (item.url === 'https://hercules-merchandising.fr/') {
+        if (item.url === 'https://hercules-merchandise.nl/') {
           return { ...item, lastmod, changefreq: 'daily', priority: 1.0 };
         }
         // Higher priority for product pages
@@ -135,16 +136,16 @@ export default defineConfig({
           return { ...item, lastmod, changefreq: 'weekly', priority: 0.8 };
         }
         // Higher priority for blog posts
-        if (item.url.includes('/blogs/') && item.url !== 'https://hercules-merchandising.fr/blogs/') {
+        if (item.url.includes('/blogs/') && item.url !== 'https://hercules-merchandise.nl/blogs/') {
           return { ...item, lastmod, changefreq: 'monthly', priority: 0.6 };
         }
         return { ...item, lastmod };
       },
-      // i18n support - French
+      // i18n support - Dutch (Belgium)
       i18n: {
-        defaultLocale: 'fr',
+        defaultLocale: 'nl',
         locales: {
-          fr: 'fr-FR',
+          nl: 'nl-BE',
         },
       },
     })

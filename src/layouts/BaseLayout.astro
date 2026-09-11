@@ -117,9 +117,13 @@ if (customHreflangUrls?.de || customHreflangUrls?.en || customHreflangUrls?.fr) 
   hreflangs = getHreflangUrls(currentPath, pageType);
 }
 
-// Canonical URL (FR site — self-referencing canonical, ensure trailing slash)
+// Hreflang stays off on NL until hreflang-mappings.ts has NL entries: for an unmapped path its
+// fallback puts this page's Dutch path on the FR/DE/UK domains, which would 404 there.
+const emitHreflang = false;
+
+// Canonical URL (NL site — self-referencing canonical on siteConfig.siteUrl, trailing slash)
 const canonicalPath = currentPath.endsWith('/') ? currentPath : `${currentPath}/`;
-const canonicalUrl = `${DOMAINS.fr}${canonicalPath}`;
+const canonicalUrl = `${siteConfig.siteUrl}${canonicalPath}`;
 
 // Full title with site name
 const fullTitle = `${title} ${siteConfig.titleSeparator} ${siteConfig.siteName}`;
@@ -149,7 +153,7 @@ if (jsonLd) {
 ---
 
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="nl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -189,8 +193,8 @@ if (jsonLd) {
   <!-- Canonical URL (omit on noindex pages like 404) -->
   {!shouldNoindex && <link rel="canonical" href={canonicalUrl} />}
 
-  <!-- Hreflang Tags for International SEO (omit on noindex pages, only emit for verified equivalents) -->
-  {!shouldNoindex && (
+  <!-- Hreflang Tags for International SEO (omit on noindex pages, only emit for verified equivalents; see emitHreflang) -->
+  {emitHreflang && !shouldNoindex && (
     <>
       {hreflangs.de && <link rel="alternate" hreflang="de" href={hreflangs.de} />}
       {hreflangs.en && <link rel="alternate" hreflang="en" href={hreflangs.en} />}
@@ -209,8 +213,9 @@ if (jsonLd) {
   <meta property="og:image:height" content="630">
   <meta property="og:site_name" content={siteConfig.siteName}>
   <meta property="og:locale" content={siteConfig.locale}>
-  <meta property="og:locale:alternate" content="en_GB">
   <meta property="og:locale:alternate" content="fr_FR">
+  <meta property="og:locale:alternate" content="de_DE">
+  <meta property="og:locale:alternate" content="en_GB">
 
   {/* Article specific OG tags */}
   {ogType === 'article' && publishedTime && (
@@ -337,7 +342,7 @@ if (jsonLd) {
   <button
     id="chat-widget-launcher"
     type="button"
-    aria-label="Ouvrir le chat"
+    aria-label="Chat openen"
     style="position: fixed; bottom: 16px; right: 16px; width: 48px; height: 48px; z-index: 2147483646; display: flex; align-items: center; justify-content: center; padding: 0; border: none; border-radius: 50%; background: #10C99E; color: #fff; cursor: pointer; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);"
   >
     <svg width="22" height="22" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true">

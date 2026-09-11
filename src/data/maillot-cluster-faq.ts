@@ -8,333 +8,333 @@ export const maillotClusterFaq: Record<string, { question: string; answer: strin
 
   /* ── 0a. Bob personnalisé (facts from the product page) ──────────── */
 
-  'bob-personnalise': [
+  'bedrukte-bucket-hat': [
     {
-      question: 'Quelle est la différence avec un bob standard personnalisé ?',
-      answer: '<p>Nos bobs ne partent pas d’un modèle existant sur lequel un logo est ajouté : chaque bob est créé à partir de zéro, avec un tissu imprimé avant confection. Le design couvre ainsi toute la surface, sans zone d’impression limitée.</p>',
+      question: 'Wat is het verschil met een standaard bucket hat met logo?',
+      answer: '<p>Onze bucket hats vertrekken niet van een bestaand model waarop een logo wordt aangebracht: elke bucket hat wordt van nul gemaakt, met stof die vóór het confectioneren wordt bedrukt. Zo bedekt het ontwerp het hele oppervlak, zonder beperkte bedrukkingszone.</p>',
     },
     {
-      question: 'Quels modèles de bob personnalisé proposez-vous ?',
-      answer: '<p>Deux modèles sont disponibles : le bob simple et le bob recto-verso. Plusieurs qualités de fabrication sont proposées : qualité plus épaisse (production en Chine ou en Europe) et qualité promotionnelle (production en Europe).</p>',
+      question: 'Welke modellen bucket hat op maat biedt u aan?',
+      answer: '<p>Er zijn twee modellen beschikbaar: de enkelzijdige bucket hat en de omkeerbare bucket hat. Er zijn verschillende productiekwaliteiten: een dikkere kwaliteit (productie in China of Europa) en een promotiekwaliteit (productie in Europa).</p>',
     },
     {
-      question: 'Peut-on imprimer des dégradés et des motifs complexes sur un bob ?',
-      answer: '<p>Oui. L’impression quadri sur toute la surface du tissu permet des designs complets, des motifs complexes, des dégradés et des visuels détaillés, sans limite de couleurs.</p>',
+      question: 'Kunnen kleurverlopen en complexe motieven op een bucket hat worden gedrukt?',
+      answer: '<p>Ja. Met vierkleurendruk over het hele oppervlak van de stof zijn volledige ontwerpen, complexe motieven, kleurverlopen en gedetailleerde beelden mogelijk, zonder beperking van het aantal kleuren.</p>',
     },
     {
-      question: 'Existe-t-il d’autres couvre-chefs personnalisables ?',
-      answer: '<p>Oui : la <strong><a href="/products/casquette-personnalisee/">casquette personnalisée sur mesure</a></strong> suit la même logique de fabrication, et la <strong><a href="/collections/couvre-chefs/">collection couvre-chefs</a></strong> regroupe casquettes, bonnets et bobs.</p>',
+      question: 'Zijn er nog andere hoofddeksels die u kunt personaliseren?',
+      answer: '<p>Ja: de <strong><a href="/products/bedrukte-cap/">cap op maat</a></strong> volgt dezelfde productielogica, en de <strong><a href="/collections/hoofddeksels/">collectie hoofddeksels</a></strong> bundelt caps, mutsen en bucket hats.</p>',
     },
   ],
 
   /* ── 0b. Cache-cou personnalisé (facts from the product page) ────── */
 
-  'cache-cou-personnalise-foot': [
+  'bedrukte-multisjaals': [
     {
-      question: 'Quel est le minimum de commande pour un cache-cou personnalisé ?',
-      answer: '<p>Le cache-cou personnalisé est disponible dès 50 pièces, avec des tarifs dégressifs selon la quantité commandée, affichés dans le tableau de prix de la page.</p>',
+      question: 'Wat is de minimale bestelling voor een multisjaal op maat?',
+      answer: '<p>De multisjaal op maat is beschikbaar vanaf 50 stuks, met staffelprijzen volgens de bestelde hoeveelheid, zoals weergegeven in de prijstabel op de pagina.</p>',
     },
     {
-      question: 'Quelles sont les dimensions et la matière du cache-cou ?',
-      answer: '<p>Le cache-cou mesure 50 x 25 cm et la version estivale est composée de 100 % polyester, entièrement imprimée en quadri avec votre motif.</p>',
+      question: 'Wat zijn de afmetingen en het materiaal van de multisjaal?',
+      answer: '<p>De multisjaal meet 50 x 25 cm en de zomerversie bestaat uit 100 % polyester, volledig bedrukt in vierkleurendruk met uw motief.</p>',
     },
     {
-      question: 'Existe-t-il une version hiver du cache-cou personnalisé ?',
-      answer: '<p>Oui. La version hiver intègre une doublure polaire, plus chaude, en une couleur unie avec votre logo brodé. Elle est appréciée pour les entraînements par temps froid.</p>',
+      question: 'Bestaat er een winterversie van de multisjaal op maat?',
+      answer: '<p>Ja. De winterversie heeft een warmere fleecevoering, in één effen kleur met uw geborduurde logo. Ze is populair voor trainingen bij koud weer.</p>',
     },
     {
-      question: 'Où sont fabriqués les cache-cous et en combien de temps ?',
-      answer: '<p>La fabrication est européenne, avec un délai de livraison standard de 3 semaines. Pour une date précise, indiquez votre échéance dès la demande de devis.</p>',
+      question: 'Waar worden de multisjaals gemaakt en hoe lang duurt het?',
+      answer: '<p>De productie gebeurt in Europa, met een standaard levertijd van 3 weken. Hebt u een precieze datum? Vermeld uw deadline dan meteen bij uw offerteaanvraag.</p>',
     },
   ],
 
   /* ── 0c. Serviette personnalisée (facts from the product page) ───── */
 
-  'serviette-personnalisee': [
+  'bedrukte-handdoeken': [
     {
-      question: 'Quels formats de serviette personnalisée sont disponibles ?',
-      answer: '<p>Quatre formats sont proposés : 100 x 50 cm (sport), 140 x 70 cm, 160 x 80 cm et 180 x 100 cm (plage). Le minimum de commande est de 25 pièces.</p>',
+      question: 'Welke formaten handdoek op maat zijn beschikbaar?',
+      answer: '<p>Er zijn vier formaten: 100 x 50 cm (sport), 140 x 70 cm, 160 x 80 cm en 180 x 100 cm (strand). De minimale bestelling is 25 stuks.</p>',
     },
     {
-      question: 'En quelle matière sont fabriquées les serviettes personnalisées ?',
-      answer: '<p>Chaque serviette combine une face en microfibre ultra-douce, pour une impression vive et détaillée, et un revers en coton absorbant pour le confort à l’usage.</p>',
+      question: 'Van welk materiaal zijn de handdoeken op maat gemaakt?',
+      answer: '<p>Elke handdoek combineert een ultrazachte voorkant in microvezel, voor een levendige en gedetailleerde bedrukking, met een absorberende katoenen achterkant voor meer comfort.</p>',
     },
     {
-      question: 'L’impression résiste-t-elle au lavage ?',
-      answer: '<p>Oui. L’impression par sublimation intègre le visuel au tissu : le rendu est éclatant, sans effet de relief, et ne s’altère pas au lavage.</p>',
+      question: 'Is de bedrukking wasbestendig?',
+      answer: '<p>Ja. Bij sublimatiedruk wordt het ontwerp in de stof opgenomen: het resultaat is stralend, zonder reliëf, en verbleekt niet in de was.</p>',
     },
     {
-      question: 'Proposez-vous une option de production plus écologique ?',
-      answer: '<p>Oui, une option de production « verte » est proposée parmi nos usines partenaires. Précisez votre préférence lors de la demande de devis.</p>',
+      question: 'Biedt u een ecologischere productieoptie aan?',
+      answer: '<p>Ja, bij onze partnerfabrieken is een "groene" productieoptie mogelijk. Vermeld uw voorkeur bij uw offerteaanvraag.</p>',
     },
     {
-      question: 'Existe-t-il une version tissée haut de gamme ?',
-      answer: '<p>Oui, la <strong><a href="/products/serviette-tissee-jacquard/">serviette tissée jacquard</a></strong> offre un rendu textile tissé. Tous les modèles sont regroupés dans la <strong><a href="/collections/serviettes-personnalisees/">collection serviettes personnalisées</a></strong>.</p>',
+      question: 'Bestaat er een hoogwaardige geweven versie?',
+      answer: '<p>Ja, de <strong><a href="/products/jacquard-handdoek-op-maat/">geweven jacquard handdoek</a></strong> biedt een geweven textielafwerking. Alle modellen vindt u in de <strong><a href="/collections/handdoeken-bedrukken/">collectie handdoeken op maat</a></strong>.</p>',
     },
   ],
 
   /* ── 0. Claquettes (facts sourced from the product page itself) ──── */
 
-  'claquettes-personnalisees-club': [
+  'bedrukte-slippers': [
     {
-      question: 'Quelles pointures sont disponibles pour les claquettes personnalisées ?',
-      answer: '<p>Les claquettes personnalisées sont disponibles du 24 au 48, de quoi équiper les équipes de jeunes comme les adultes, les entraîneurs et les membres du staff avec un ajustement confortable pour tous.</p>',
+      question: 'Welke maten zijn beschikbaar voor de slippers op maat?',
+      answer: '<p>De slippers op maat zijn beschikbaar in de maten 24 tot 48, zodat u jeugdploegen, volwassenen, trainers en stafleden kunt uitrusten, met een comfortabele pasvorm voor iedereen.</p>',
     },
     {
-      question: 'Quelles couleurs de semelle peut-on choisir ?',
-      answer: '<p>Douze couleurs de semelle sont disponibles : blanc, noir, jaune, vert, bleu royal, bleu marine, rouge, gris, orange, violet, marron et rose. De quoi assortir vos claquettes personnalisées aux couleurs exactes de votre club.</p>',
+      question: 'Welke zoolkleuren kunt u kiezen?',
+      answer: '<p>Er zijn twaalf zoolkleuren beschikbaar: wit, zwart, geel, groen, koningsblauw, marineblauw, rood, grijs, oranje, paars, bruin en roze. Zo stemt u uw slippers op maat af op de exacte kleuren van uw club.</p>',
     },
     {
-      question: 'Logo imprimé ou logo en relief : quelles sont les options ?',
-      answer: '<p>Deux modèles sont proposés : la conception imprimée en quadri, adaptée aux logos détaillés et multicolores, et le logo en relief pour un rendu plus tactile. Notre équipe vérifie votre fichier et prépare le design avant production.</p>',
+      question: 'Bedrukt logo of logo in reliëf: wat zijn de opties?',
+      answer: '<p>Er zijn twee modellen: het ontwerp in vierkleurendruk, geschikt voor gedetailleerde en veelkleurige logo\'s, en het logo in reliëf voor een tastbaarder resultaat. Ons team controleert uw bestand en maakt het ontwerp vóór de productie.</p>',
     },
     {
-      question: 'Quel est le minimum de commande et comment évoluent les prix ?',
-      answer: '<p>Les claquettes personnalisées sont commandables dès 20 paires, avec des tarifs dégressifs qui deviennent plus avantageux à mesure que la quantité augmente. Le tableau de prix de la page indique le prix par paire selon le volume.</p>',
+      question: 'Wat is de minimale bestelling en hoe evolueren de prijzen?',
+      answer: '<p>De slippers op maat kunnen besteld worden vanaf 20 paar, met staffelprijzen die gunstiger worden naarmate de hoeveelheid stijgt. De prijstabel op de pagina toont de prijs per paar volgens het volume.</p>',
     },
     {
-      question: 'En quelle matière sont fabriquées les claquettes ?',
-      answer: '<p>Elles sont fabriquées à partir de matériaux 100 % PVC de première qualité, choisis pour leur durabilité et leur longévité.</p>',
+      question: 'Van welk materiaal zijn de slippers gemaakt?',
+      answer: '<p>Ze worden gemaakt van 100 % PVC van topkwaliteit, gekozen voor hun sterkte en lange levensduur.</p>',
     },
     {
-      question: 'Quel est le délai de livraison des claquettes personnalisées ?',
-      answer: '<p>Le délai de livraison standard est de 4 à 6 semaines après validation du design. Ce produit ne dispose pas de service express ; pour une date précise, indiquez votre échéance dès la demande de devis afin que notre équipe confirme le calendrier réalisable.</p>',
+      question: 'Wat is de levertijd van de slippers op maat?',
+      answer: '<p>De standaard levertijd is 4 tot 6 weken na goedkeuring van het ontwerp. Voor dit product is geen expresservice beschikbaar; hebt u een precieze datum, vermeld uw deadline dan meteen bij uw offerteaanvraag, zodat ons team de haalbare planning kan bevestigen.</p>',
     },
   ],
 
   /* ── 1. Collection ──────────────────────────────────────────────── */
 
-  'football': [
+  'voetbal': [
     {
-      question: 'Proposez-vous des maillots de foot personnalisés pour les clubs ?',
-      answer: '<p>Oui, notre <strong><a href="/products/maillot-de-football-personnalise/">maillot de foot personnalisé</a></strong> est conçu pour les clubs, les équipes et les associations : sublimation durable, design gratuit réalisé par nos graphistes et prix dégressifs selon la quantité.</p>',
+      question: 'Biedt u voetbalshirts op maat aan voor clubs?',
+      answer: '<p>Ja, ons <strong><a href="/products/voetbalshirt-bedrukken/">voetbalshirt op maat</a></strong> is ontworpen voor clubs, ploegen en verenigingen: duurzame sublimatie, gratis ontwerp door onze grafisch ontwerpers en staffelprijzen volgens de hoeveelheid.</p>',
     },
     {
-      question: 'Comment créer un maillot de foot à l\'image de notre équipe ?',
-      answer: '<p>Envoyez-nous votre logo, vos couleurs et vos idées : notre équipe prépare gratuitement un design de <strong><a href="/products/maillot-de-football-personnalise/">maillot de football personnalisé</a></strong> avant toute mise en production. Vous validez le rendu, puis nous lançons la fabrication en Europe.</p>',
+      question: 'Hoe ontwerpen we een voetbalshirt dat bij onze ploeg past?',
+      answer: '<p>Stuur ons uw logo, uw kleuren en uw ideeën: ons team maakt gratis een ontwerp van uw <strong><a href="/products/voetbalshirt-bedrukken/">voetbalshirt op maat</a></strong> voordat de productie start. U keurt het resultaat goed, daarna starten wij de productie in Europa.</p>',
     },
     {
-      question: 'Peut-on commander une tenue de football complète ?',
-      answer: '<p>Absolument. En plus des maillots, nous personnalisons les shorts, les chaussettes et les <a href="/collections/equipements-personnalises/">équipements de sport</a> assortis, pour une tenue de match cohérente aux couleurs de votre club.</p>',
+      question: 'Kunnen we een volledig voetbaltenue bestellen?',
+      answer: '<p>Absoluut. Naast de shirts personaliseren we ook shorts, voetbalkousen en bijpassende <a href="/collections/sportshirts-bedrukken/">sportuitrusting</a>, voor een samenhangend wedstrijdtenue in de kleuren van uw club.</p>',
     },
   ],
 
-  'accessoires-de-football': [
+  'accessoires': [
     {
-      question: 'Quels accessoires de football proposez-vous ?',
-      answer: '<p>Nous offrons une large gamme d\'accessoires personnalis\u00e9s pour les clubs, tels que des casquettes, des cache-cous, des drapeaux, et bien plus. Chaque produit est con\u00e7u pour repr\u00e9senter fi\u00e8rement vos couleurs et votre logo. D\u00e9couvrez tous nos accessoires disponibles ci-dessus et personnalisez-les selon vos besoins.</p>',
+      question: 'Welke voetbalaccessoires biedt u aan?',
+      answer: '<p>We bieden een ruim assortiment accessoires op maat voor clubs, zoals caps, multisjaals, vlaggen en nog veel meer. Elk product is ontworpen om uw kleuren en uw logo trots te tonen. Ontdek hierboven al onze beschikbare accessoires en personaliseer ze naar wens.</p>',
     },
     {
-      question: 'Peut-on personnaliser les accessoires de football avec le logo de notre \u00e9quipe ?',
-      answer: '<p>Oui, absolument. Tous nos accessoires, y compris les casquettes, les drapeaux, et les cache-cous, peuvent \u00eatre personnalis\u00e9s avec le logo, les couleurs ou le texte de votre choix. Cela permet de cr\u00e9er des produits uniques pour vos fans ou vos \u00e9v\u00e9nements.</p>',
+      question: 'Kunnen de voetbalaccessoires gepersonaliseerd worden met het logo van onze ploeg?',
+      answer: '<p>Ja, absoluut. Al onze accessoires, waaronder caps, vlaggen en multisjaals, kunnen gepersonaliseerd worden met het logo, de kleuren of de tekst van uw keuze. Zo maakt u unieke producten voor uw fans of uw evenementen.</p>',
     },
     {
-      question: 'Proposez-vous aussi des maillots de football personnalis\u00e9s ?',
-      answer: '<p>Oui, en plus des accessoires, nous cr\u00e9ons \u00e9galement des <strong><a href="/products/maillot-de-football-personnalise/">maillots de football personnalis\u00e9s</a></strong> avec votre logo, vos couleurs, et le nom de votre \u00e9quipe.</p>',
+      question: 'Biedt u ook voetbalshirts op maat aan?',
+      answer: '<p>Ja, naast accessoires maken we ook <strong><a href="/products/voetbalshirt-bedrukken/">voetbalshirts op maat</a></strong> met uw logo, uw kleuren en de naam van uw ploeg.</p>',
     },
   ],
 
   /* ── 2. Cache-cou ───────────────────────────────────────────────── */
 
-  'cache-cou-personnalise-foot': [
+  'bedrukte-multisjaals': [
     {
-      question: 'Quelle est la diff\u00e9rence entre un cache-cou standard et un mod\u00e8le d\'hiver ?',
-      answer: '<p>Le cache-cou standard est fabriqu\u00e9 en polyester, id\u00e9al pour les activit\u00e9s estivales ou l\u00e9g\u00e8res. Le mod\u00e8le d\'hiver est doubl\u00e9 en polaire, offrant une meilleure isolation contre le froid tout en conservant vos options de personnalisation.</p>',
+      question: 'Wat is het verschil tussen een standaard multisjaal en een wintermodel?',
+      answer: '<p>De standaard multisjaal is gemaakt van polyester, ideaal voor zomerse of lichte activiteiten. Het wintermodel heeft een fleecevoering die beter isoleert tegen de kou, met behoud van al uw personalisatiemogelijkheden.</p>',
     },
     {
-      question: 'Quelle est la quantit\u00e9 minimale de commande pour les cache-cous personnalis\u00e9s ?',
-      answer: '<p>La quantit\u00e9 minimale pour commander nos cache-cous personnalis\u00e9s est de 100 pi\u00e8ces. Pour des volumes plus importants, des remises progressives sont appliqu\u00e9es, comme indiqu\u00e9 dans notre tableau de prix.</p>',
+      question: 'Wat is het minimumaantal voor multisjaals op maat?',
+      answer: '<p>Het minimumaantal voor onze multisjaals op maat is 100 stuks. Voor grotere volumes gelden oplopende kortingen, zoals aangegeven in onze prijstabel.</p>',
     },
     {
-      question: 'Puis-je compl\u00e9ter ma commande avec d\'autres articles personnalis\u00e9s pour mon club ?',
-      answer: '<p>Oui, nous proposons une large gamme d\'articles compl\u00e9mentaires, comme des \u00e9charpes, des bonnets et m\u00eame des <strong><a href="/products/maillot-de-football-personnalise/">maillots de football personnalis\u00e9s</a></strong>. N\'h\u00e9sitez pas \u00e0 consulter le restant de notre site.</p>',
+      question: 'Kan ik mijn bestelling aanvullen met andere artikelen op maat voor mijn club?',
+      answer: '<p>Ja, we bieden een ruim assortiment aanvullende artikelen aan, zoals sjaals, mutsen en zelfs <strong><a href="/products/voetbalshirt-bedrukken/">voetbalshirts op maat</a></strong>. Neem gerust een kijkje op de rest van onze website.</p>',
     },
   ],
 
   /* ── 3 & 4. Fanions (same content for both) ─────────────────────── */
 
-  'fanion-grand-format-personnalise-imprime': [
+  'groot-vaantje-op-maat': [
     {
-      question: 'Quels sont les avantages des fanions tiss\u00e9s par rapport aux fanions imprim\u00e9s ?',
-      answer: '<p>Les fanions tiss\u00e9s sont r\u00e9alis\u00e9s avec du fil acrylique pour une finition haut de gamme et une durabilit\u00e9 accrue. Ils conviennent particuli\u00e8rement aux grandes occasions ou aux clubs souhaitant un rendu premium. Les fanions imprim\u00e9s, en revanche, sont plus \u00e9conomiques et offrent une grande libert\u00e9 de design gr\u00e2ce \u00e0 l\'impression quadri.</p>',
+      question: 'Wat zijn de voordelen van geweven vaantjes tegenover bedrukte vaantjes?',
+      answer: '<p>Geweven vaantjes worden gemaakt met acryldraad, voor een hoogwaardige afwerking en een langere levensduur. Ze zijn bijzonder geschikt voor grote gelegenheden of voor clubs die een premium resultaat willen. Bedrukte vaantjes zijn dan weer voordeliger en bieden veel ontwerpvrijheid dankzij de vierkleurendruk.</p>',
     },
     {
-      question: 'Proposez-vous des formats sp\u00e9cifiques pour les fanions ?',
-      answer: '<p>Oui, nous offrons une vari\u00e9t\u00e9 de tailles et de formats adapt\u00e9s \u00e0 vos besoins : des petits mod\u00e8les pour voiture, des fanions \u00e0 \u00e9changer avant un match, ou encore des banni\u00e8res d\u00e9coratives plus grandes. Vous pouvez nous consulter pour des dimensions sp\u00e9cifiques.</p>',
+      question: 'Biedt u specifieke formaten voor vaantjes aan?',
+      answer: '<p>Ja, we bieden verschillende maten en formaten aan volgens uw behoeften: kleine modellen voor in de auto, vaantjes om uit te wisselen voor een match, of grotere decoratieve banners. Neem gerust contact met ons op voor specifieke afmetingen.</p>',
     },
     {
-      question: 'Puis-je compl\u00e9ter ma commande avec d\'autres articles pour mon club ?',
-      answer: '<p>Absolument. En plus des fanions, nous proposons une gamme compl\u00e8te d\'articles personnalis\u00e9s, tels que des \u00e9charpes, des bonnets, ou encore des <strong><a href="/products/maillot-de-football-personnalise/">maillots de football personnalis\u00e9s</a></strong> pour renforcer votre identit\u00e9 visuelle.</p>',
+      question: 'Kan ik mijn bestelling aanvullen met andere artikelen voor mijn club?',
+      answer: '<p>Absoluut. Naast vaantjes bieden we een volledig assortiment artikelen op maat aan, zoals sjaals, mutsen of <strong><a href="/products/voetbalshirt-bedrukken/">voetbalshirts op maat</a></strong>, om uw visuele identiteit te versterken.</p>',
     },
   ],
 
-  'fanion-personnalise-imprime': [
+  'bedrukte-vaantjes': [
     {
-      question: 'Quels sont les avantages des fanions tiss\u00e9s par rapport aux fanions imprim\u00e9s ?',
-      answer: '<p>Les fanions tiss\u00e9s sont r\u00e9alis\u00e9s avec du fil acrylique pour une finition haut de gamme et une durabilit\u00e9 accrue. Ils conviennent particuli\u00e8rement aux grandes occasions ou aux clubs souhaitant un rendu premium. Les fanions imprim\u00e9s, en revanche, sont plus \u00e9conomiques et offrent une grande libert\u00e9 de design gr\u00e2ce \u00e0 l\'impression quadri.</p>',
+      question: 'Wat zijn de voordelen van geweven vaantjes tegenover bedrukte vaantjes?',
+      answer: '<p>Geweven vaantjes worden gemaakt met acryldraad, voor een hoogwaardige afwerking en een langere levensduur. Ze zijn bijzonder geschikt voor grote gelegenheden of voor clubs die een premium resultaat willen. Bedrukte vaantjes zijn dan weer voordeliger en bieden veel ontwerpvrijheid dankzij de vierkleurendruk.</p>',
     },
     {
-      question: 'Proposez-vous des formats sp\u00e9cifiques pour les fanions ?',
-      answer: '<p>Oui, nous offrons une vari\u00e9t\u00e9 de tailles et de formats adapt\u00e9s \u00e0 vos besoins : des petits mod\u00e8les pour voiture, des fanions \u00e0 \u00e9changer avant un match, ou encore des banni\u00e8res d\u00e9coratives plus grandes. Vous pouvez nous consulter pour des dimensions sp\u00e9cifiques.</p>',
+      question: 'Biedt u specifieke formaten voor vaantjes aan?',
+      answer: '<p>Ja, we bieden verschillende maten en formaten aan volgens uw behoeften: kleine modellen voor in de auto, vaantjes om uit te wisselen voor een match, of grotere decoratieve banners. Neem gerust contact met ons op voor specifieke afmetingen.</p>',
     },
     {
-      question: 'Puis-je compl\u00e9ter ma commande avec d\'autres articles pour mon club ?',
-      answer: '<p>Absolument. En plus des fanions, nous proposons une gamme compl\u00e8te d\'articles personnalis\u00e9s, tels que des \u00e9charpes, des bonnets, ou encore des <strong><a href="/products/maillot-de-football-personnalise/">maillots de football personnalis\u00e9s</a></strong> pour renforcer votre identit\u00e9 visuelle.</p>',
+      question: 'Kan ik mijn bestelling aanvullen met andere artikelen voor mijn club?',
+      answer: '<p>Absoluut. Naast vaantjes bieden we een volledig assortiment artikelen op maat aan, zoals sjaals, mutsen of <strong><a href="/products/voetbalshirt-bedrukken/">voetbalshirts op maat</a></strong>, om uw visuele identiteit te versterken.</p>',
     },
   ],
 
   /* ── 5. Ballons ─────────────────────────────────────────────────── */
 
-  'ballons-de-foot-personnalisee': [
+  'voetballen-bedrukken': [
     {
-      question: 'Quelles sont les diff\u00e9rences entre les ballons promotionnels, d\'entra\u00eenement et de match ?',
-      answer: '<ul><li>Ballon promotionnel : id\u00e9al pour la visibilit\u00e9 de votre marque ou comme cadeau pour les supporters, fabriqu\u00e9 en PU et PVC.</li><li>Ballon d\'entra\u00eenement : parfait pour une utilisation r\u00e9guli\u00e8re, avec des mat\u00e9riaux durables respectant les normes FIFA.</li><li>Ballon de match : notre produit haut de gamme, utilis\u00e9 dans des comp\u00e9titions professionnelles, enti\u00e8rement personnalisable pour refl\u00e9ter vos couleurs.</li></ul>',
+      question: 'Wat zijn de verschillen tussen promotieballen, trainingsballen en wedstrijdballen?',
+      answer: '<ul><li>Promotiebal: ideaal voor de zichtbaarheid van uw merk of als geschenk voor supporters, gemaakt van PU en PVC.</li><li>Trainingsbal: perfect voor regelmatig gebruik, met duurzame materialen die voldoen aan de FIFA-normen.</li><li>Wedstrijdbal: ons topproduct, gebruikt in professionele competities, volledig te personaliseren in uw kleuren.</li></ul>',
     },
     {
-      question: 'Puis-je personnaliser les ballons avec des designs plus complexes ?',
-      answer: '<p>Oui, nous pouvons imprimer des designs plus complexes en quadri, y compris plusieurs logos ou des motifs r\u00e9p\u00e9t\u00e9s. Vous avez \u00e9galement la possibilit\u00e9 de choisir parmi diff\u00e9rentes tailles, styles (r\u00e9tro, beach soccer) et finitions.</p>',
+      question: 'Kan ik de ballen personaliseren met complexere ontwerpen?',
+      answer: '<p>Ja, we kunnen complexere ontwerpen in vierkleurendruk aanbrengen, waaronder meerdere logo\'s of herhaalde motieven. U kunt ook kiezen uit verschillende maten, stijlen (retro, beachsoccer) en afwerkingen.</p>',
     },
     {
-      question: 'En plus des ballons, proposez-vous d\'autres articles pour \u00e9quiper mon \u00e9quipe ?',
-      answer: '<p>Absolument. Offrez une identit\u00e9 compl\u00e8te \u00e0 votre \u00e9quipe avec nos <strong><a href="/products/maillot-de-football-personnalise/">maillots de foot personnalis\u00e9s</a></strong>, con\u00e7us pour allier confort, performance et design sur mesure. Ces maillots sont id\u00e9aux pour accompagner vos ballons lors de matchs ou d\'entra\u00eenements.</p>',
+      question: 'Biedt u naast ballen ook andere artikelen aan om mijn ploeg uit te rusten?',
+      answer: '<p>Absoluut. Geef uw ploeg een volledige identiteit met onze <strong><a href="/products/voetbalshirt-bedrukken/">voetbalshirts op maat</a></strong>, ontworpen om comfort, prestaties en een ontwerp op maat te combineren. Deze shirts passen perfect bij uw ballen tijdens wedstrijden of trainingen.</p>',
     },
   ],
 
   /* ── 6. Bonnets ─────────────────────────────────────────────────── */
 
-  'bonnets-personnalises': [
+  'bedrukte-mutsen': [
     {
-      question: 'Quels sont les diff\u00e9rents types de bonnets personnalisables que vous proposez ?',
-      answer: '<p>Nous proposons une large gamme de bonnets adapt\u00e9s \u00e0 vos besoins :</p><ul><li>Classiques : id\u00e9als pour un look intemporel.</li><li>\u00c9pais ou en maille torsad\u00e9e : parfaits pour l\'hiver.</li><li>R\u00e9versibles ou avec \u00e9tiquettes en cuir : pour un style plus original.</li></ul>',
+      question: 'Welke soorten mutsen op maat biedt u aan?',
+      answer: '<p>We bieden een ruim assortiment mutsen aan volgens uw behoeften:</p><ul><li>Klassiek: ideaal voor een tijdloze look.</li><li>Dik of met kabelbreisel: perfect voor de winter.</li><li>Omkeerbaar of met leren labels: voor een originelere stijl.</li></ul>',
     },
     {
-      question: 'Puis-je int\u00e9grer des designs d\u00e9taill\u00e9s sur mes bonnets ?',
-      answer: '<p>Oui, nous offrons diff\u00e9rentes techniques de personnalisation :</p><ul><li>Broderie pour un rendu soign\u00e9.</li><li>Badges cousus ou \u00e9tiquettes en cuir pour un effet premium.</li></ul><p>Pour les motifs plus complexes, nous pouvons \u00e9galement utiliser la sublimation.</p>',
+      question: 'Kan ik gedetailleerde ontwerpen op mijn mutsen laten aanbrengen?',
+      answer: '<p>Ja, we bieden verschillende personalisatietechnieken aan:</p><ul><li>Borduursel voor een verzorgde afwerking.</li><li>Opgenaaide patches of leren labels voor een premium effect.</li></ul><p>Voor complexere motieven kunnen we ook sublimatie gebruiken.</p>',
     },
     {
-      question: 'En plus des bonnets, proposez-vous d\'autres v\u00eatements personnalis\u00e9s ?',
-      answer: '<p>Oui, nous offrons des solutions compl\u00e8tes pour \u00e9quiper votre \u00e9quipe, y compris des <strong><a href="/products/maillot-de-football-personnalise/">maillots de football personnalis\u00e9s</a></strong>, parfaits pour renforcer l\'identit\u00e9 visuelle de votre club ou association. Associez vos bonnets et maillots pour une tenue harmonieuse.</p>',
+      question: 'Biedt u naast mutsen ook andere kleding op maat aan?',
+      answer: '<p>Ja, we bieden volledige oplossingen om uw ploeg uit te rusten, waaronder <strong><a href="/products/voetbalshirt-bedrukken/">voetbalshirts op maat</a></strong>, perfect om de visuele identiteit van uw club of vereniging te versterken. Combineer uw mutsen en shirts voor een harmonieus geheel.</p>',
     },
   ],
 
   /* ── 7. Veste de pluie ──────────────────────────────────────────── */
 
-  'veste-de-pluie-football': [
+  'bedrukte-regenjassen': [
     {
-      question: 'Puis-je personnaliser enti\u00e8rement le design de la veste de pluie ?',
-      answer: '<p>Oui, toute la surface de la veste peut \u00eatre personnalis\u00e9e avec vos couleurs, motifs et logos. Vous pouvez m\u00eame choisir un design diff\u00e9rent \u00e0 l\'avant et \u00e0 l\'arri\u00e8re pour refl\u00e9ter parfaitement l\'identit\u00e9 de votre club ou entreprise.</p>',
+      question: 'Kan ik het ontwerp van de regenjas volledig personaliseren?',
+      answer: '<p>Ja, het volledige oppervlak van de jas kan gepersonaliseerd worden met uw kleuren, motieven en logo\'s. U kunt zelfs een ander ontwerp kiezen voor de voor- en achterkant, zodat de jas perfect de identiteit van uw club of bedrijf weerspiegelt.</p>',
     },
     {
-      question: 'Les vestes sont-elles adapt\u00e9es \u00e0 une utilisation intensive ?',
-      answer: '<p>Absolument. Fabriqu\u00e9es en polyester 100 % imperm\u00e9able, elles sont parfaites pour les conditions m\u00e9t\u00e9orologiques difficiles tout en offrant une grande durabilit\u00e9 pour les activit\u00e9s sportives r\u00e9guli\u00e8res.</p>',
+      question: 'Zijn de jassen geschikt voor intensief gebruik?',
+      answer: '<p>Absoluut. Ze zijn gemaakt van 100 % waterdicht polyester, ideaal voor moeilijke weersomstandigheden, en gaan lang mee bij regelmatige sportactiviteiten.</p>',
     },
     {
-      question: 'Puis-je associer les vestes de pluie avec d\'autres \u00e9quipements personnalis\u00e9s ?',
-      answer: '<p>Bien s\u00fbr. Compl\u00e9tez votre tenue avec nos <strong><a href="/products/maillot-de-football-personnalise/">maillots de football personnalis\u00e9s</a></strong>, id\u00e9aux pour cr\u00e9er une identit\u00e9 visuelle coh\u00e9rente lors des matchs ou des entra\u00eenements. Associez-les avec les vestes pour une \u00e9quipe pr\u00eate \u00e0 toutes les conditions.</p>',
+      question: 'Kan ik de regenjassen combineren met andere uitrusting op maat?',
+      answer: '<p>Natuurlijk. Vervolledig uw outfit met onze <strong><a href="/products/voetbalshirt-bedrukken/">voetbalshirts op maat</a></strong>, ideaal om een samenhangende visuele identiteit te creëren tijdens wedstrijden of trainingen. Combineer ze met de jassen voor een ploeg die klaar is voor alle weersomstandigheden.</p>',
     },
   ],
 
   /* ── 8. Gants ───────────────────────────────────────────────────── */
 
-  'gants-de-football-personnalises': [
+  'gepersonaliseerde-handschoenen': [
     {
-      question: 'Puis-je choisir des tailles diff\u00e9rentes pour les gants ?',
-      answer: '<p>Oui, vous pouvez commander des gants en tailles adultes ou enfants. Il est possible de pr\u00e9ciser la r\u00e9partition des tailles apr\u00e8s la commande, sans frais suppl\u00e9mentaires.</p>',
+      question: 'Kan ik verschillende maten kiezen voor de handschoenen?',
+      answer: '<p>Ja, u kunt handschoenen bestellen in maten voor volwassenen of kinderen. U kunt de maatverdeling na de bestelling doorgeven, zonder extra kosten.</p>',
     },
     {
-      question: 'Quelles sont les options pour personnaliser les gants avec un logo ?',
-      answer: '<p>Nous proposons trois techniques de personnalisation pour les logos :</p><ul><li>Broderie : id\u00e9al pour un rendu \u00e9l\u00e9gant.</li><li>\u00c9tiquette tiss\u00e9e : pour un look raffin\u00e9 et durable.</li><li>Badge imprim\u00e9 : parfait pour les designs plus complexes.</li></ul><p>Ces logos sont appliqu\u00e9s sur les deux gants.</p>',
+      question: 'Welke opties zijn er om de handschoenen met een logo te personaliseren?',
+      answer: '<p>We bieden drie personalisatietechnieken voor logo\'s aan:</p><ul><li>Borduursel: ideaal voor een elegante afwerking.</li><li>Geweven label: voor een verfijnde en duurzame look.</li><li>Bedrukte patch: perfect voor complexere ontwerpen.</li></ul><p>Deze logo\'s worden op beide handschoenen aangebracht.</p>',
     },
     {
-      question: 'Comment compl\u00e9ter l\'\u00e9quipement de mon \u00e9quipe avec des produits assortis ?',
-      answer: '<p>Pour une coh\u00e9rence parfaite, associez vos gants personnalis\u00e9s \u00e0 nos <strong><a href="/products/maillot-de-football-personnalise/">maillots de foot sur mesure</a></strong>, adapt\u00e9s \u00e0 vos couleurs et votre logo. Cela permet \u00e0 votre \u00e9quipe d\'afficher une identit\u00e9 visuelle forte sur le terrain.</p>',
+      question: 'Hoe vervolledig ik de uitrusting van mijn ploeg met bijpassende producten?',
+      answer: '<p>Voor een perfect geheel combineert u uw handschoenen op maat met onze <strong><a href="/products/voetbalshirt-bedrukken/">voetbalshirts op maat</a></strong>, afgestemd op uw kleuren en uw logo. Zo toont uw ploeg een sterke visuele identiteit op het veld.</p>',
     },
   ],
 
   /* ── 9. Maillot entra\u00eenement ────────────────────────────────────── */
 
-  'maillot-entrainement-personnalise': [
+  'warm-up-shirt': [
     {
-      question: 'Puis-je personnaliser les maillots d\'entra\u00eenement avec des noms ou des num\u00e9ros ?',
-      answer: '<p>Pour ces maillots, tous les mod\u00e8les doivent avoir un design identique. Vous pouvez ajouter des noms ou des num\u00e9ros apr\u00e8s la production gr\u00e2ce \u00e0 une impression flex. Pour des personnalisations uniques d\u00e8s la production, d\u00e9couvrez nos <strong><a href="/products/maillot-de-football-personnalise/">maillots de football sur mesure</a></strong>.</p>',
+      question: 'Kan ik de trainingsshirts personaliseren met namen of nummers?',
+      answer: '<p>Voor deze shirts moeten alle exemplaren een identiek ontwerp hebben. U kunt na de productie namen of nummers toevoegen met flexdruk. Wilt u al tijdens de productie een unieke personalisatie? Ontdek dan onze <strong><a href="/products/voetbalshirt-bedrukken/">voetbalshirts op maat</a></strong>.</p>',
     },
     {
-      question: 'Les maillots sont-ils adapt\u00e9s pour un usage intensif ?',
-      answer: '<p>Oui, fabriqu\u00e9s en 100 % polyester, ces maillots sont l\u00e9gers, respirants et con\u00e7us pour r\u00e9sister aux entra\u00eenements r\u00e9guliers. Ils offrent un confort optimal pour les joueurs tout en maintenant une apparence professionnelle.</p>',
+      question: 'Zijn de shirts geschikt voor intensief gebruik?',
+      answer: '<p>Ja, deze shirts zijn gemaakt van 100 % polyester, licht, ademend en ontworpen om regelmatige trainingen te doorstaan. Ze bieden spelers optimaal comfort en behouden een professionele uitstraling.</p>',
     },
   ],
 
   /* ── 10. Badges ─────────────────────────────────────────────────── */
 
-  'badges-personnalises': [
+  'geweven-patches': [
     {
-      question: 'Quels types de badges proposez-vous ?',
-      answer: '<p>Nous offrons deux types de badges personnalisables :</p><ul><li>\u00c0 coudre : id\u00e9al pour une fixation permanente.</li><li>\u00c0 coller : facile \u00e0 fixer gr\u00e2ce \u00e0 une colle textile sp\u00e9ciale activ\u00e9e par repassage, parfaite pour un usage pratique.</li></ul>',
+      question: 'Welke soorten patches biedt u aan?',
+      answer: '<p>We bieden twee soorten patches op maat aan:</p><ul><li>Om op te naaien: ideaal voor een permanente bevestiging.</li><li>Om op te strijken: eenvoudig te bevestigen dankzij een speciale textiellijm die door strijken wordt geactiveerd, perfect voor praktisch gebruik.</li></ul>',
     },
     {
-      question: 'Combien de couleurs puis-je int\u00e9grer dans le design de mon badge ?',
-      answer: '<p>Vous pouvez utiliser jusqu\'\u00e0 6 couleurs diff\u00e9rentes pour personnaliser vos badges. Pour des designs plus complexes, contactez notre \u00e9quipe pour discuter des options disponibles.</p>',
+      question: 'Hoeveel kleuren kan ik in het ontwerp van mijn patch gebruiken?',
+      answer: '<p>U kunt tot 6 verschillende kleuren gebruiken om uw patches te personaliseren. Voor complexere ontwerpen neemt u contact op met ons team om de beschikbare opties te bespreken.</p>',
     },
     {
-      question: 'Comment int\u00e9grer les badges \u00e0 un \u00e9quipement d\'\u00e9quipe ?',
-      answer: '<p>Les badges personnalis\u00e9s sont parfaits pour ajouter une touche unique \u00e0 vos \u00e9quipements, notamment aux <strong><a href="/products/maillot-de-football-personnalise/">maillots de foot personnalis\u00e9s</a></strong>. Ils permettent de renforcer l\'identit\u00e9 de votre club tout en maintenant un look professionnel.</p>',
+      question: 'Hoe integreer ik de patches in de uitrusting van de ploeg?',
+      answer: '<p>Patches op maat zijn perfect om uw uitrusting een unieke toets te geven, met name <strong><a href="/products/voetbalshirt-bedrukken/">voetbalshirts op maat</a></strong>. Ze versterken de identiteit van uw club en zorgen tegelijk voor een professionele look.</p>',
     },
   ],
 
   /* ── 11. Money page — maillot de football personnalis\u00e9 ──────────── */
 
-  'maillot-de-football-personnalise': [
+  'voetbalshirt-bedrukken': [
     {
-      question: 'Quels types de maillots de football personnalis\u00e9s proposez-vous ?',
-      answer: '<p>Nous proposons trois mod\u00e8les de maillots :</p><ul><li>Col rond : le classique pour un style sobre et intemporel.</li><li>Col en V : offrant une touche sportive et moderne.</li><li>Col polo : id\u00e9al pour un look \u00e9l\u00e9gant et professionnel.</li></ul><p>Vous pouvez choisir parmi une large gamme de tailles, allant de 2 ans \u00e0 6XL, et m\u00eame des coupes sp\u00e9cifiques pour les \u00e9quipes f\u00e9minines.</p>',
+      question: 'Welke soorten voetbalshirts op maat biedt u aan?',
+      answer: '<p>We bieden drie shirtmodellen aan:</p><ul><li>Ronde hals: de klassieker voor een sobere en tijdloze stijl.</li><li>V-hals: voor een sportieve en moderne toets.</li><li>Polokraag: ideaal voor een elegante en professionele look.</li></ul><p>U kunt kiezen uit een ruim aanbod maten, van 2 jaar tot 6XL, en zelfs specifieke pasvormen voor damesploegen.</p>',
     },
     {
-      question: 'Quelle est la diff\u00e9rence entre les deux mati\u00e8res disponibles ?',
-      answer: '<ul><li>Mati\u00e8re lisse et serr\u00e9e : id\u00e9ale pour un look classique, elle offre une excellente r\u00e9sistance et convient aux conditions de jeu normales.</li><li>Mati\u00e8re perfor\u00e9e : con\u00e7ue pour les sportifs, elle am\u00e9liore l\'\u00e9vacuation de la transpiration, garantissant un confort optimal m\u00eame pendant les matchs intenses.</li></ul><p>Les deux mati\u00e8res sont fabriqu\u00e9es \u00e0 partir de polyester de haute qualit\u00e9, con\u00e7u pour durer.</p>',
+      question: 'Wat is het verschil tussen de twee beschikbare materialen?',
+      answer: '<ul><li>Glad en dicht materiaal: ideaal voor een klassieke look, zeer sterk en geschikt voor normale spelomstandigheden.</li><li>Geperforeerd materiaal: ontworpen voor sporters, voert transpiratie beter af en garandeert optimaal comfort, zelfs tijdens intense wedstrijden.</li></ul><p>Beide materialen bestaan uit hoogwaardig polyester dat gemaakt is om lang mee te gaan.</p>',
     },
     {
-      question: 'Puis-je ajouter des noms ou des num\u00e9ros uniques sur chaque maillot ?',
-      answer: '<p>Oui, chaque maillot peut \u00eatre personnalis\u00e9 avec un nom et un num\u00e9ro unique. Ces \u00e9l\u00e9ments peuvent \u00eatre plac\u00e9s \u00e0 l\'arri\u00e8re, sur la poitrine ou toute autre position de votre choix. Cette option est id\u00e9ale pour les \u00e9quipes souhaitant afficher une identit\u00e9 forte sur le terrain.</p>',
+      question: 'Kan ik unieke namen of nummers op elk shirt laten zetten?',
+      answer: '<p>Ja, elk shirt kan gepersonaliseerd worden met een eigen naam en nummer. Deze kunnen op de rug, op de borst of op elke andere plaats naar keuze worden aangebracht. Deze optie is ideaal voor ploegen die een sterke identiteit willen tonen op het veld.</p>',
     },
     {
-      question: 'Comment obtenir un design unique pour mon \u00e9quipe ?',
-      answer: '<p>Nos graphistes travaillent avec vous pour cr\u00e9er un design sur mesure qui refl\u00e8te l\'identit\u00e9 de votre \u00e9quipe. Vous pouvez \u00e9galement fournir votre propre design en t\u00e9l\u00e9chargeant le gabarit fourni. Nous nous assurons que tout est pr\u00eat avant de lancer la production.</p>',
+      question: 'Hoe krijg ik een uniek ontwerp voor mijn ploeg?',
+      answer: '<p>Onze grafisch ontwerpers werken met u samen aan een ontwerp op maat dat de identiteit van uw ploeg weerspiegelt. U kunt ook uw eigen ontwerp aanleveren door het meegeleverde sjabloon te downloaden. We zorgen ervoor dat alles klaar is voordat de productie start.</p>',
     },
     {
-      question: 'Puis-je assortir les maillots avec d\'autres \u00e9quipements pour mon \u00e9quipe ?',
-      answer: '<p>Absolument. Compl\u00e9tez vos maillots avec des shorts assortis, des chaussettes personnalis\u00e9es ou m\u00eame des vestes et accessoires tels que des gants ou des bonnets. Ces \u00e9l\u00e9ments permettent de renforcer l\'unit\u00e9 visuelle de votre \u00e9quipe et de se d\u00e9marquer lors des comp\u00e9titions.</p>',
+      question: 'Kan ik de shirts combineren met andere uitrusting voor mijn ploeg?',
+      answer: '<p>Absoluut. Vervolledig uw shirts met bijpassende shorts, voetbalkousen op maat of zelfs jassen en accessoires zoals handschoenen of mutsen. Zo versterkt u de visuele eenheid van uw ploeg en valt u op tijdens competities.</p>',
     },
     {
-      question: 'Pourquoi choisir nos maillots de football personnalis\u00e9s ?',
-      answer: '<p>Nos maillots sont con\u00e7us pour r\u00e9pondre aux besoins des \u00e9quipes professionnelles et amateurs :</p><ul><li>Fabrication europ\u00e9enne garantissant une qualit\u00e9 sup\u00e9rieure.</li><li>Libert\u00e9 totale dans le choix des couleurs, motifs et logos.</li><li>Disponibilit\u00e9 pour toutes les tailles et coupes.</li><li>Service de conception gratuit avec des graphistes sp\u00e9cialis\u00e9s.</li></ul>',
+      question: 'Waarom kiezen voor onze voetbalshirts op maat?',
+      answer: '<p>Onze shirts zijn ontworpen voor de behoeften van professionele en amateurploegen:</p><ul><li>Europese productie voor een superieure kwaliteit.</li><li>Volledige vrijheid in de keuze van kleuren, motieven en logo\'s.</li><li>Beschikbaar in alle maten en pasvormen.</li><li>Gratis ontwerpservice door gespecialiseerde grafisch ontwerpers.</li></ul>',
     },
     {
-      question: 'Quels avantages les maillots personnalis\u00e9s offrent-ils par rapport aux mod\u00e8les standards ?',
-      answer: '<p>Les maillots personnalis\u00e9s permettent :</p><ul><li>De refl\u00e9ter l\'identit\u00e9 unique de votre \u00e9quipe.</li><li>De cr\u00e9er un sentiment d\'appartenance fort parmi les joueurs.</li><li>D\'assurer une visibilit\u00e9 accrue pour vos sponsors ou partenaires gr\u00e2ce \u00e0 l\'int\u00e9gration de leurs logos.</li></ul><p>Ils sont particuli\u00e8rement recommand\u00e9s pour les clubs, associations sportives ou entreprises souhaitant se d\u00e9marquer.</p>',
+      question: 'Welke voordelen bieden shirts op maat tegenover standaardmodellen?',
+      answer: '<p>Met shirts op maat kunt u:</p><ul><li>De unieke identiteit van uw ploeg weerspiegelen.</li><li>Een sterk gevoel van verbondenheid creëren tussen de spelers.</li><li>Zorgen voor meer zichtbaarheid voor uw sponsors of partners door hun logo\'s te integreren.</li></ul><p>Ze zijn bijzonder aan te raden voor clubs, sportverenigingen of bedrijven die zich willen onderscheiden.</p>',
     },
     {
-      question: 'Quels sports ou \u00e9v\u00e9nements conviennent aux maillots personnalis\u00e9s ?',
-      answer: '<p>Nos maillots sont polyvalents et peuvent \u00eatre utilis\u00e9s pour :</p><ul><li>Les matchs de football amateurs ou professionnels.</li><li>Les entra\u00eenements et tournois multisports.</li><li>Les \u00e9v\u00e9nements d\'entreprise ou team building.</li><li>Les comp\u00e9titions scolaires ou universitaires.</li></ul>',
+      question: 'Voor welke sporten of evenementen zijn shirts op maat geschikt?',
+      answer: '<p>Onze shirts zijn veelzijdig en kunnen gebruikt worden voor:</p><ul><li>Amateur- of profvoetbalwedstrijden.</li><li>Trainingen en multisporttoernooien.</li><li>Bedrijfsevenementen of teambuilding.</li><li>School- of universiteitscompetities.</li></ul>',
     },
     {
-      question: 'Quels sont les volumes de commande minimum et maximum ?',
-      answer: '<p>Le volume minimum est de 5 maillots par commande. Pour des volumes importants, au-del\u00e0 de 100 unit\u00e9s, nous proposons des tarifs d\u00e9gressifs et des options sp\u00e9cifiques. N\'h\u00e9sitez pas \u00e0 nous contacter pour discuter des commandes en gros.</p>',
+      question: 'Wat zijn de minimale en maximale bestelvolumes?',
+      answer: '<p>Het minimumvolume is 5 shirts per bestelling. Voor grote volumes, boven de 100 stuks, bieden we staffelprijzen en specifieke opties aan. Neem gerust contact met ons op om grote bestellingen te bespreken.</p>',
     },
     {
-      question: 'Comment entretenir les maillots personnalis\u00e9s pour une durabilit\u00e9 maximale ?',
-      answer: '<p>Pour pr\u00e9server la qualit\u00e9 de vos maillots, nous recommandons :</p><ul><li>Lavage \u00e0 30\u00b0C maximum sur programme d\u00e9licat.</li><li>Pas de s\u00e8che-linge, s\u00e9chage \u00e0 l\'air libre \u00e0 plat.</li><li>Repassage \u00e0 basse temp\u00e9rature, \u00e0 l\'envers.</li><li>Pas de fer \u00e0 repasser directement sur les zones personnalis\u00e9es (flocage, sublimation).</li></ul>',
+      question: 'Hoe onderhoudt u shirts op maat zodat ze zo lang mogelijk meegaan?',
+      answer: '<p>Om de kwaliteit van uw shirts te behouden, raden we aan:</p><ul><li>Wassen op maximaal 30°C op een fijnwasprogramma.</li><li>Niet in de droogkast, plat aan de lucht laten drogen.</li><li>Strijken op lage temperatuur, binnenstebuiten.</li><li>Nooit rechtstreeks strijken op de gepersonaliseerde zones (flock, sublimatie).</li></ul>',
     },
     {
-      question: 'Comment int\u00e9grer des sponsors sur les maillots ?',
-      answer: '<p>Vous pouvez inclure les logos de vos sponsors \u00e0 plusieurs emplacements strat\u00e9giques : poitrine, manches ou dos. Cela permet de maximiser leur visibilit\u00e9 tout en respectant l\'identit\u00e9 visuelle de l\'\u00e9quipe. Notre graphiste int\u00e9grateur peut vous conseiller sur le placement optimal.</p>',
+      question: 'Hoe integreer ik sponsors op de shirts?',
+      answer: '<p>U kunt de logo\'s van uw sponsors op verschillende strategische plaatsen aanbrengen: borst, mouwen of rug. Zo maximaliseert u hun zichtbaarheid en respecteert u tegelijk de visuele identiteit van de ploeg. Onze grafisch ontwerper kan u adviseren over de optimale plaatsing.</p>',
     },
     {
-      question: 'Quel est le prix d\u2019un maillot de football personnalis\u00e9 ?',
-      answer: '<p>Le prix par maillot d\u00e9pend de la quantit\u00e9 command\u00e9e et des options choisies : les tarifs sont d\u00e9gressifs et affich\u00e9s dans le tableau de prix de la page, d\u00e8s 5 pi\u00e8ces. Demandez un devis gratuit pour une offre pr\u00e9cise adapt\u00e9e \u00e0 votre \u00e9quipe.</p>',
+      question: 'Wat kost een voetbalshirt op maat?',
+      answer: '<p>De prijs per shirt hangt af van de bestelde hoeveelheid en de gekozen opties: de staffelprijzen staan in de prijstabel op de pagina, vanaf 5 stuks. Vraag een gratis offerte aan voor een precieze prijs op maat van uw ploeg.</p>',
     },
     {
-      question: 'Livrez-vous les maillots personnalis\u00e9s partout en Europe ?',
-      answer: '<p>Oui. Depuis plus de 10 ans, nous accompagnons des centaines de clubs et d\u2019\u00e9quipes \u00e0 travers l\u2019Europe, de la conception du design \u00e0 la livraison des maillots.</p>',
+      question: 'Levert u de shirts op maat in heel Europa?',
+      answer: '<p>Ja. Al meer dan 10 jaar begeleiden we honderden clubs en ploegen in heel Europa, van het ontwerp tot de levering van de shirts.</p>',
     },
   ],
 };

@@ -18,7 +18,7 @@ interface ProductSearchProps {
 }
 
 export default function ProductSearch({
-  placeholder = 'Rechercher des produits...',
+  placeholder = 'Producten zoeken...',
   apiUrl = 'https://hercules-product-sync-nl.gilles-86d.workers.dev'
 }: ProductSearchProps) {
   const [query, setQuery] = useState('');
@@ -108,10 +108,10 @@ export default function ProductSearch({
           value={query}
           onChange={handleInputChange}
           onFocus={handleFocus}
-          aria-label="Product search"
+          aria-label="Producten zoeken"
         />
         {isLoading && (
-          <span className="product-search-spinner" aria-label="Searching..." />
+          <span className="product-search-spinner" aria-label="Bezig met zoeken..." />
         )}
         <svg
           className="product-search-icon"
@@ -124,7 +124,7 @@ export default function ProductSearch({
 
       <div className={`product-search-results ${isOpen ? 'active' : ''}`}>
         {noResults ? (
-          <p className="product-search-no-results">No products found.</p>
+          <p className="product-search-no-results">Geen producten gevonden.</p>
         ) : (
           <ul className="product-result-list">
             {results.map((product) => (

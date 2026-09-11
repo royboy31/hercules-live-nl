@@ -21,13 +21,13 @@ try {
   console.error('Error fetching products:', e);
 }
 
-const canonicalUrl = `${siteConfig.siteUrl}/boutique/`;
-const pageDescription = 'Découvrez notre boutique en ligne de merchandising sportif personnalisé. Écharpes, bonnets, fanions, vêtements de sport et bien plus encore, fabriqués en Europe.';
+const canonicalUrl = `${siteConfig.siteUrl}/winkel/`;
+const pageDescription = 'Ontdek onze webshop met sportmerchandise op maat. Sjaals, mutsen, vaantjes, sportkleding en nog veel meer, gemaakt in Europa.';
 
 const jsonLdSchemas = [
   getBreadcrumbSchema([
-    { name: 'Accueil', url: siteConfig.siteUrl },
-    { name: 'Boutique', url: canonicalUrl },
+    { name: 'Home', url: siteConfig.siteUrl },
+    { name: 'Winkel', url: canonicalUrl },
   ]),
 ];
 
@@ -36,7 +36,7 @@ const preloadImages = lcpImageUrl ? [lcpImageUrl] : [];
 ---
 
 <BaseLayout
-  title="Boutique"
+  title="Winkel"
   description={pageDescription}
   pageType="collection"
   canonicalUrl={canonicalUrl}
@@ -50,12 +50,12 @@ const preloadImages = lcpImageUrl ? [lcpImageUrl] : [];
       <nav class="breadcrumb" aria-label="Breadcrumb">
         <ol itemscope itemtype="https://schema.org/BreadcrumbList">
           <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
-            <a href="/" itemprop="item"><span itemprop="name">Accueil</span></a>
+            <a href="/" itemprop="item"><span itemprop="name">Home</span></a>
             <meta itemprop="position" content="1" />
             <span class="separator"><img src="/images/breadcrumb-separator.svg" alt="" width="6" height="12" /></span>
           </li>
           <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
-            <span itemprop="name">Boutique</span>
+            <span itemprop="name">Winkel</span>
             <meta itemprop="position" content="2" />
           </li>
         </ol>
@@ -63,9 +63,9 @@ const preloadImages = lcpImageUrl ? [lcpImageUrl] : [];
 
       <!-- Header -->
       <header class="category-header">
-        <h1 class="category-title">Boutique Hercules</h1>
+        <h1 class="category-title">De Hercules-winkel</h1>
         <div class="category-description">
-          <p>Découvrez notre collection complète de produits sportifs personnalisés — des tenues d'équipe et équipements d'entraînement aux écharpes et accessoires. Tous nos produits sont fabriqués sur commande et entièrement personnalisables avec les couleurs, logos et designs de votre équipe.</p>
+          <p>Ontdek ons volledige gamma sportproducten op maat — van teamkleding en trainingsuitrusting tot sjaals en accessoires. Al onze producten worden op bestelling gemaakt en volledig gepersonaliseerd met de kleuren, logo's en ontwerpen van uw ploeg.</p>
         </div>
       </header>
 
@@ -78,7 +78,7 @@ const preloadImages = lcpImageUrl ? [lcpImageUrl] : [];
         </ul>
       ) : (
         <div class="no-products">
-          <p>Aucun produit disponible.</p>
+          <p>Geen producten beschikbaar.</p>
         </div>
       )}
 

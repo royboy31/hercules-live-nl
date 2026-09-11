@@ -3,8 +3,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import TrustLogos from '../components/TrustLogos.astro';
 import CustomerReviews from '../components/CustomerReviews.astro';
 
-const pageTitle = "Parlons de votre projet | Hercules Merchandising France";
-const pageDescription = "Contactez Hercules Merchandising pour votre merchandising sportif personnalisé. Service de design gratuit, réponse rapide, accompagnement de l'idée à la livraison.";
+const pageTitle = "Bespreek uw project met ons | Hercules Merchandise";
+const pageDescription = "Neem contact op met Hercules Merchandise voor uw sportmerchandise op maat. Gratis ontwerpservice, snel antwoord en begeleiding van idee tot levering.";
 ---
 
 <BaseLayout
@@ -16,10 +16,10 @@ const pageDescription = "Contactez Hercules Merchandising pour votre merchandisi
   <section class="hero-section">
     <div class="hero-container">
       <div class="hero-text">
-        <h1>Parlons de votre projet</h1>
-        <p class="hero-intro">Vous avez une question ou souhaitez démarrer un projet ?</p>
-        <p class="hero-intro">Envoyez-nous un message et nous vous répondrons rapidement, généralement dans la journée.</p>
-        <p class="hero-intro">Que vous ayez déjà une idée précise ou que vous souhaitiez simplement explorer vos options, nous vous guiderons tout au long du processus.</p>
+        <h1>Bespreek uw project met ons</h1>
+        <p class="hero-intro">Hebt u een vraag of wilt u een project opstarten?</p>
+        <p class="hero-intro">Stuur ons een bericht en we antwoorden u snel, meestal nog dezelfde dag.</p>
+        <p class="hero-intro">Of u nu al een duidelijk idee hebt of gewoon uw mogelijkheden wilt verkennen, we begeleiden u doorheen het hele proces.</p>
       </div>
     </div>
   </section>
@@ -27,7 +27,7 @@ const pageDescription = "Contactez Hercules Merchandising pour votre merchandisi
   <!-- Pourquoi nous contacter -->
   <section class="why-section">
     <div class="container">
-      <h2 class="section-title">Pourquoi nous contacter</h2>
+      <h2 class="section-title">Waarom contact opnemen</h2>
       <div class="why-grid">
         <div class="why-card">
           <div class="why-icon">
@@ -38,7 +38,7 @@ const pageDescription = "Contactez Hercules Merchandising pour votre merchandisi
               <circle cx="11" cy="11" r="2"></circle>
             </svg>
           </div>
-          <p>Service de design gratuit et sans engagement</p>
+          <p>Gratis ontwerpservice, zonder verplichting</p>
         </div>
         <div class="why-card">
           <div class="why-icon">
@@ -46,7 +46,7 @@ const pageDescription = "Contactez Hercules Merchandising pour votre merchandisi
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
             </svg>
           </div>
-          <p>Réponse rapide et communication claire</p>
+          <p>Snel antwoord en duidelijke communicatie</p>
         </div>
         <div class="why-card">
           <div class="why-icon">
@@ -55,7 +55,7 @@ const pageDescription = "Contactez Hercules Merchandising pour votre merchandisi
               <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
             </svg>
           </div>
-          <p>Accompagnement de l'idée à la livraison</p>
+          <p>Begeleiding van idee tot levering</p>
         </div>
       </div>
     </div>
@@ -64,38 +64,38 @@ const pageDescription = "Contactez Hercules Merchandising pour votre merchandisi
   <!-- Contact Form Section -->
   <section class="form-section">
     <div class="container">
-      <h2 class="section-title">Votre message</h2>
+      <h2 class="section-title">Uw bericht</h2>
       <div class="form-wrapper">
         <form class="contact-form" id="contact-form" novalidate>
           <!-- Name + Email Row -->
           <div class="form-row">
             <div class="form-field">
-              <label for="contact-name">Nom <span class="required">*</span></label>
-              <input type="text" id="contact-name" name="name" placeholder="Votre nom" required />
+              <label for="contact-name">Naam <span class="required">*</span></label>
+              <input type="text" id="contact-name" name="name" placeholder="Uw naam" required />
             </div>
             <div class="form-field">
               <label for="contact-email">E-mail <span class="required">*</span></label>
-              <input type="email" id="contact-email" name="email" placeholder="Votre e-mail" required />
+              <input type="email" id="contact-email" name="email" placeholder="Uw e-mailadres" required />
             </div>
           </div>
 
           <!-- Organisation -->
           <div class="form-field">
-            <label for="contact-organisation">Organisation <span class="optional">(facultatif)</span></label>
-            <input type="text" id="contact-organisation" name="organisation" placeholder="Club, équipe, entreprise ou organisation" />
+            <label for="contact-organisation">Organisatie <span class="optional">(optioneel)</span></label>
+            <input type="text" id="contact-organisation" name="organisation" placeholder="Club, ploeg, bedrijf of organisatie" />
           </div>
 
           <!-- Message -->
           <div class="form-field">
-            <label for="contact-message">Message <span class="required">*</span></label>
-            <textarea id="contact-message" name="message" placeholder="Parlez-nous de votre projet..." rows="6" required></textarea>
+            <label for="contact-message">Bericht <span class="required">*</span></label>
+            <textarea id="contact-message" name="message" placeholder="Vertel ons over uw project..." rows="6" required></textarea>
           </div>
 
           <!-- File Upload -->
           <div class="form-field">
-            <label for="contact-files">Joindre un fichier <span class="optional">(facultatif)</span></label>
+            <label for="contact-files">Bestand bijvoegen <span class="optional">(optioneel)</span></label>
             <input type="file" id="contact-files" name="files" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" />
-            <span class="file-hint">Logos, designs ou images de référence</span>
+            <span class="file-hint">Logo's, ontwerpen of referentiebeelden</span>
           </div>
 
           <!-- Error / Success Messages -->
@@ -103,7 +103,7 @@ const pageDescription = "Contactez Hercules Merchandising pour votre merchandisi
 
           <!-- Submit Button -->
           <div class="form-submit">
-            <button type="submit" id="contact-submit">Envoyer le message</button>
+            <button type="submit" id="contact-submit">Bericht versturen</button>
           </div>
         </form>
       </div>
@@ -113,36 +113,36 @@ const pageDescription = "Contactez Hercules Merchandising pour votre merchandisi
   <!-- Ce qui se passe ensuite -->
   <section class="next-section">
     <div class="container">
-      <h2 class="section-title">Ce qui se passe ensuite</h2>
-      <p class="section-intro">Une fois que vous nous avez contactés :</p>
+      <h2 class="section-title">Hoe gaat het verder?</h2>
+      <p class="section-intro">Zodra u contact met ons hebt opgenomen:</p>
       <div class="steps-grid">
         <div class="step">
           <span class="step-number">1</span>
-          <p>Nous examinons votre demande</p>
+          <p>We bekijken uw aanvraag</p>
         </div>
         <div class="step">
           <span class="step-number">2</span>
-          <p>Nous vous répondons rapidement</p>
+          <p>We antwoorden u snel</p>
         </div>
         <div class="step">
           <span class="step-number">3</span>
-          <p>Nous discutons de votre projet</p>
+          <p>We bespreken uw project</p>
         </div>
         <div class="step">
           <span class="step-number">4</span>
-          <p>Nous créons votre premier design gratuitement</p>
+          <p>We maken gratis uw eerste ontwerp</p>
         </div>
       </div>
-      <p class="no-pressure">Vous décidez si vous souhaitez continuer — sans pression.</p>
+      <p class="no-pressure">U beslist zelf of u verder wilt gaan — zonder enige druk.</p>
     </div>
   </section>
 
   <!-- Trusted Section -->
   <section class="trust-section">
     <div class="container">
-      <h2 class="section-title">La confiance d'organisations à travers l'Europe</h2>
-      <p class="section-intro">Nous accompagnons plus de 1 000 clients chaque année.</p>
-      <p class="section-intro">Pour un avis honnête sur notre façon de travailler, nous vous invitons à consulter nos <a href="https://www.google.com/maps/place/Hercules+Merchandising+France/@30.886403,-49.4022061,3z/data=!3m1!4b1!4m8!3m7!1s0x21d159209e369b9d:0xa126617f91835893!8m2!3d30.886403!4d-49.4022062!9m1!1b1!16s%2Fg%2F11vkhhwqmm?entry=ttu" target="_blank" rel="noopener noreferrer">avis Google</a>.</p>
+      <h2 class="section-title">Organisaties in heel Europa vertrouwen op ons</h2>
+      <p class="section-intro">We begeleiden elk jaar meer dan 1.000 klanten.</p>
+      <p class="section-intro">Wilt u een eerlijk beeld van hoe we werken? Lees dan onze <a href="https://www.google.com/maps/place/Hercules+Merchandising+France/@30.886403,-49.4022061,3z/data=!3m1!4b1!4m8!3m7!1s0x21d159209e369b9d:0xa126617f91835893!8m2!3d30.886403!4d-49.4022062!9m1!1b1!16s%2Fg%2F11vkhhwqmm?entry=ttu" target="_blank" rel="noopener noreferrer">Google-reviews</a>.</p>
     </div>
   </section>
 
@@ -567,7 +567,7 @@ const pageDescription = "Contactez Hercules Merchandising pour votre merchandisi
         e.preventDefault();
 
         submitBtn.disabled = true;
-        submitBtn.textContent = 'Envoi en cours...';
+        submitBtn.textContent = 'Bezig met verzenden...';
         messageDiv.className = 'form-message';
         messageDiv.textContent = '';
 
@@ -600,14 +600,14 @@ const pageDescription = "Contactez Hercules Merchandising pour votre merchandisi
           pushGenerateLead('contact');
 
           messageDiv.className = 'form-message success';
-          messageDiv.textContent = 'Merci pour votre message ! Nous vous répondrons rapidement, généralement dans la journée.';
+          messageDiv.textContent = 'Bedankt voor uw bericht! We antwoorden u snel, meestal nog dezelfde dag.';
           form.reset();
         } catch (error) {
           messageDiv.className = 'form-message error';
-          messageDiv.textContent = 'Une erreur est survenue. Veuillez réessayer.';
+          messageDiv.textContent = 'Er is een fout opgetreden. Probeer het opnieuw.';
         } finally {
           submitBtn.disabled = false;
-          submitBtn.textContent = 'Envoyer le message';
+          submitBtn.textContent = 'Bericht versturen';
         }
       });
     }

@@ -28,7 +28,7 @@ const emptyStars = 5 - fullStars - (partialStar > 0 ? 1 : 0);
 const ratingDisplay = rating % 1 === 0 ? rating.toFixed(1) : rating.toString();
 
 // Format review count for display (e.g., "179+ Reviews")
-const reviewCountDisplay = `${reviewCount}+ Reviews`;
+const reviewCountDisplay = `${reviewCount}+ reviews`;
 
 // Calculate aspect ratio for responsive sizing
 // With review count: 450x50, Without: 306x50
@@ -38,14 +38,14 @@ const aspectRatio = viewBoxWidth / viewBoxHeight;
 const height = Math.round(width / aspectRatio);
 ---
 
-<a href="#review-section" class:list={["google-reviews-badge", className]} title={`${rating} stars from ${reviewCount}+ reviews`}>
+<a href="#review-section" class:list={["google-reviews-badge", className]} title={`${rating} sterren op basis van ${reviewCount}+ reviews`}>
   <svg
     viewBox={`0 0 ${viewBoxWidth} ${viewBoxHeight}`}
     width={width}
     height={height}
     xmlns="http://www.w3.org/2000/svg"
     role="img"
-    aria-label={`Google Reviews: ${rating} out of 5 stars from ${reviewCount}+ reviews`}
+    aria-label={`Google Reviews: ${rating} op 5 sterren op basis van ${reviewCount}+ reviews`}
     preserveAspectRatio="xMidYMid meet"
   >
     <!-- Google "G" Logo (36x36, smaller) -->
