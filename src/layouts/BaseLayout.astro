@@ -98,6 +98,11 @@ if (shouldNoindex && nofollow) {
 // until 2026-08-27). Set only on the staging build step in deploy.yml.
 if (import.meta.env.PUBLIC_IS_STAGING === 'true') robotsMeta = robotsConfig.none;
 
+// Staging builds carry no tracking and no live chat: the GTM container, Ads and Clarity ids
+// and the ChatHive workspace still belong to the live FR site, so a staging visit would land
+// in FR's analytics and a staging chat in FR's inbox.
+const loadTracking = import.meta.env.PUBLIC_IS_STAGING !== 'true';
+
 // Build hreflang URLs - use provided custom URLs or get from mapping
 let hreflangs: Record<Locale, string>;
 
@@ -305,10 +310,11 @@ if (jsonLd) {
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 </head>
 <body class="min-h-screen flex flex-col">
-  <!-- Google Tag Manager (noscript) -->
-  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-N7NM77N"
-  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-  <!-- End Google Tag Manager (noscript) -->
+  <!-- Google Tag Manager (noscript) - live builds only, see loadTracking -->
+  {loadTracking && (
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-N7NM77N"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+  )}
 
   <TopBar />
   <Header />
@@ -327,6 +333,7 @@ if (jsonLd) {
        that loads the ChatHive SDK. The SDK used to load on a 15s timer and then expand
        its iframe by itself, which measured 0.0664 CLS on every page: two thirds of the
        0.10 budget. See RESEARCH/HERCULES_FR_MOBILE_CLS_FIELD_DIAGNOSIS_2026_08_17.md. -->
+  {loadTracking && (
   <button
     id="chat-widget-launcher"
     type="button"
@@ -337,6 +344,7 @@ if (jsonLd) {
       <path d="M256 448c141.4 0 256-93.1 256-208S397.4 32 256 32S0 125.1 0 240c0 45.1 17.7 86.8 47.7 120.9c-1.9 24.5-11.4 46.3-21.4 62.9c-5.5 9.2-11.1 16.6-15.2 21.6c-2.1 2.5-3.7 4.4-4.9 5.7c-.6 .6-1 1.1-1.3 1.4l-.3 .3c-4.6 4.6-5.9 11.4-3.4 17.4c2.5 6 8.3 9.9 14.8 9.9c28.7 0 57.6-8.9 81.6-19.3c22.9-10 42.4-21.9 54.3-30.6c31.8 11.5 67 17.9 104.1 17.9z"/>
     </svg>
   </button>
+  )}
   <style is:inline>
     #chat-widget-launcher:hover { background: #10A380; }
     #chat-widget-launcher[disabled] { opacity: 0.6; cursor: default; }
@@ -360,9 +368,11 @@ if (jsonLd) {
     })();
   </script>
 
-  <!-- Deferred Analytics & Tracking Scripts — staggered loading after LCP for PageSpeed 90+ -->
-  <script is:inline>
+  <!-- Deferred Analytics & Tracking Scripts — staggered loading after LCP for PageSpeed 90+.
+       Staging builds mark the tag and it exits at once (see loadTracking). -->
+  <script is:inline data-no-tracking={loadTracking ? undefined : 'staging'}>
     (function(){
+      if (document.currentScript && document.currentScript.dataset.noTracking) return;
       var phase1=false, phase2=false;
 
       function inIdle(fn){
