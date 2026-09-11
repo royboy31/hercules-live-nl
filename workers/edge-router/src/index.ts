@@ -5,6 +5,8 @@
  * on the same domain for seamless cookie/session sharing.
  */
 
+import { PRODUCT_SLUG_REDIRECTS, COLLECTION_SLUG_REDIRECTS } from './slug-redirects';
+
 interface Env {
   ASTRO_ORIGIN: string;
   WORDPRESS_ORIGIN: string;
@@ -211,6 +213,16 @@ export default {
     const redirectTarget = PAGE_REDIRECTS[pathname.replace(/\/+$/, '') || '/'];
     if (redirectTarget) {
       return Response.redirect(new URL(redirectTarget + search, url.origin).toString(), 301);
+    }
+
+    // French product/collection slugs (see slug-redirects.ts) -> the Dutch slug
+    const slugMatch = pathname.match(/^\/(products|collections)\/([^/]+)\/?$/);
+    if (slugMatch) {
+      const table = slugMatch[1] === 'products' ? PRODUCT_SLUG_REDIRECTS : COLLECTION_SLUG_REDIRECTS;
+      const nlSlug = table[slugMatch[2]];
+      if (nlSlug) {
+        return Response.redirect(new URL(`/${slugMatch[1]}/${nlSlug}/${search}`, url.origin).toString(), 301);
+      }
     }
 
     // Debug endpoint to check what cookies Edge Router receives
