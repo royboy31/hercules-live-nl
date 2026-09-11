@@ -47,7 +47,8 @@ interface UserData {
   avatar: string;
 }
 
-// Use the same domain when accessed through Edge Router, otherwise use staging
+// Use the same domain when accessed through Edge Router, otherwise the NL WP clone
+// (pages.dev previews) — never a live site.
 const getBaseUrl = () => {
   if (typeof window === 'undefined') return '';
 
@@ -55,13 +56,13 @@ const getBaseUrl = () => {
 
   if (
     hostname.includes('hercules-edge-router') ||
-    hostname.includes('hercules-merchandising.fr') ||
+    hostname.includes('hercules-merchandise.nl') ||
     hostname === 'localhost'
   ) {
     return '';
   }
 
-  return 'https://hercules-merchandising.fr';
+  return 'https://nl.hercules-merchandising.fr';
 };
 
 export default function UserSession({ type }: UserSessionProps) {

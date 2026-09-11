@@ -276,7 +276,13 @@ export default function ProductConfigurator({ productSlug, workerUrl = 'https://
     async function fetchConfig() {
       try {
         console.log('[ProductConfigurator] Fetching config for:', productSlug);
-        const url = `https://hercules-merchandising.fr/wp-json/hercules/v1/product-config-by-slug/${productSlug}`;
+        // Same-origin behind the NL edge router; any other host (pages.dev previews)
+        // reads the NL WP clone, never a live site.
+        const host = window.location.hostname;
+        const wpBase = host.includes('hercules-edge-router') || host.includes('hercules-merchandise.nl') || host === 'localhost'
+          ? ''
+          : 'https://nl.hercules-merchandising.fr';
+        const url = `${wpBase}/wp-json/hercules/v1/product-config-by-slug/${productSlug}`;
         console.log('[ProductConfigurator] URL:', url);
 
         let response: Response | null = null;

@@ -59,13 +59,14 @@ class SessionManager {
 
     if (
       hostname.includes('hercules-edge-router') ||
-      hostname.includes('hercules-merchandising.fr') ||
+      hostname.includes('hercules-merchandise.nl') ||
       hostname === 'localhost'
     ) {
       return '/wp-json/hercules/v1/session';
     }
 
-    return 'https://hercules-merchandising.fr/wp-json/hercules/v1/session';
+    // Any other host (pages.dev previews) reads the NL WP clone, never a live site.
+    return 'https://nl.hercules-merchandising.fr/wp-json/hercules/v1/session';
   }
 
   private notifyListeners() {
