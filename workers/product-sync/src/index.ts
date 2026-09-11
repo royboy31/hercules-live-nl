@@ -493,6 +493,123 @@ class WooCommerceClient {
   }
 }
 
+// Cached copies of each product image. full (361x361) and thumb (100x100) are the WordPress
+// crops the sync has always stored (base64); lg (768) covers the 588px product image at 1x and
+// 361px cards at 2x; xl (1024) is the 2x/lightbox copy. lg/xl are stored as raw bytes
+// (metadata.encoding = 'binary') so serving them is a copy, not a decode loop over ~1 MB.
+// The browser is never sent to WordPress for any of them.
+type ImageSize = 'full' | 'thumb' | 'lg' | 'xl';
+
+interface ImageMetadata {
+  contentType?: string;
+  originalUrl?: string;
+  sourceSrc?: string;
+  syncedAt?: string;
+  imageIndex?: number;
+  size?: string;
+  encoding?: 'binary';
+}
+
+const MAX_STORED_IMAGE_BYTES = 4 * 1024 * 1024;
+const MAX_THUMB_BYTES = 30 * 1024;
+
+function productImageKey(slug: string, index: number, size: ImageSize): string {
+  const base = index === 0 ? `image:${slug}` : `image:${slug}:${index}`;
+  return size === 'full' ? base : `${base}:${size}`;
+}
+
+// WordPress file names to try for one size, smallest adequate first. Variants are named after
+// the pre-scale basename, so "-scaled" uploads are tried both ways. lg/xl end with the upload
+// itself: WordPress only generates the larger variants when the upload is bigger than them.
+function imageSizeCandidates(src: string, size: ImageSize): string[] {
+  const suffixes = size === 'thumb' ? ['100x100', '83x83', '150x150']
+    : size === 'full' ? ['361x361', '300x300', '600x600']
+    : size === 'lg' ? ['768x768', '1024x1024']
+    : ['1024x1024'];
+  const bases = [src];
+  const unscaled = src.replace(/-scaled(\.[^.]+)$/, '$1');
+  if (unscaled !== src) bases.push(unscaled);
+  const candidates: string[] = [];
+  for (const suffix of suffixes) {
+    for (const base of bases) candidates.push(base.replace(/(\.[^.]+)$/, `-${suffix}$1`));
+  }
+  if (size === 'lg' || size === 'xl') candidates.push(src);
+  return candidates;
+}
+
+// Pull one size of a product image from WordPress - server side only. The subrequest is
+// cached at Cloudflare's edge for a week, so a miss costs WordPress one request per image.
+async function fetchImageForSize(src: string, size: ImageSize): Promise<{ bytes: ArrayBuffer; contentType: string } | null> {
+  for (const candidate of imageSizeCandidates(src, size)) {
+    let response: Response;
+    try {
+      response = await fetch(candidate, { cf: { cacheEverything: true, cacheTtl: 604800 } });
+    } catch (e) {
+      continue;
+    }
+    if (!response.ok) continue;
+    const bytes = await response.arrayBuffer();
+    if (size === 'thumb' && bytes.byteLength > MAX_THUMB_BYTES) continue;
+    if (bytes.byteLength > MAX_STORED_IMAGE_BYTES) continue;
+    return { bytes, contentType: response.headers.get('content-type') || 'image/png' };
+  }
+  return null;
+}
+
+// Store the larger copies of a product image during the sync (only the main image, to stay
+// inside the per-invocation subrequest budget); other images are filled on first request.
+async function cacheImageSize(
+  kv: KVNamespace,
+  src: string,
+  slug: string,
+  index: number,
+  size: 'lg' | 'xl',
+  forceRefresh: boolean
+): Promise<boolean> {
+  const key = productImageKey(slug, index, size);
+  if (!forceRefresh) {
+    const existing = await kv.get(key, 'stream');
+    if (existing) {
+      await existing.cancel();
+      return true;
+    }
+  }
+  const image = await fetchImageForSize(src, size);
+  if (!image) return false;
+  await kv.put(key, image.bytes, {
+    metadata: {
+      contentType: image.contentType,
+      sourceSrc: src,
+      syncedAt: new Date().toISOString(),
+      imageIndex: index,
+      size,
+      encoding: 'binary',
+    },
+  });
+  return true;
+}
+
+// Serve a KV image value: lg/xl (and lazily filled copies) are raw bytes, full/thumb from the
+// original sync are base64 text.
+function productImageResponse(value: ArrayBuffer, metadata: ImageMetadata | null): Response {
+  let body: ArrayBuffer | Uint8Array = value;
+  if (metadata?.encoding !== 'binary') {
+    const binaryString = atob(new TextDecoder().decode(value));
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    body = bytes;
+  }
+  return new Response(body, {
+    headers: {
+      'Content-Type': metadata?.contentType || 'image/png',
+      'Cache-Control': 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400',
+      'Access-Control-Allow-Origin': '*',
+    },
+  });
+}
+
 // Image sync helper - caches images in KV storage
 // Supports both full size (600x600) and thumbnail (300x300) versions
 // Optional imageIndex parameter for caching gallery images (0 = main, 1+ = gallery)
@@ -897,6 +1014,13 @@ async function syncAllProducts(env: Env, offset: number = 0, forceImageRefresh: 
               }
             }
           }
+
+          // Larger copies of the main image (768 / 1024) for the product page and the card
+          // upgrade, so neither ever reaches WordPress from the browser
+          if (product.images[0]?.src) {
+            await cacheImageSize(env.PRODUCTS_KV, product.images[0].src, product.slug, 0, 'lg', forceImageRefresh);
+            await cacheImageSize(env.PRODUCTS_KV, product.images[0].src, product.slug, 0, 'xl', forceImageRefresh);
+          }
         }
 
         // Update product with cached image count and re-save
@@ -1110,11 +1234,15 @@ async function syncSingleProduct(env: Env, productId: number): Promise<SyncedPro
     const staleKeys: string[] = [
       `image:${product.slug}`,
       `image:${product.slug}:thumb`,
+      `image:${product.slug}:lg`,
+      `image:${product.slug}:xl`,
     ];
     const maxOld = Math.min(oldImageIds.length, MAX_GALLERY_IMAGES);
     for (let i = 1; i <= maxOld; i++) {
       staleKeys.push(`image:${product.slug}:${i}`);
       staleKeys.push(`image:${product.slug}:${i}:thumb`);
+      staleKeys.push(`image:${product.slug}:${i}:lg`);
+      staleKeys.push(`image:${product.slug}:${i}:xl`);
     }
     await Promise.all(staleKeys.map(key => env.PRODUCTS_KV.delete(key)));
     console.log(`Image list changed for ${product.slug}: cleared ${staleKeys.length} stale KV entries`);
@@ -1155,6 +1283,12 @@ async function syncSingleProduct(env: Env, productId: number): Promise<SyncedPro
           cachedImageCount++;
         }
       }
+    }
+
+    // Larger copies of the main image (768 / 1024), refreshed on every webhook update
+    if (product.images[0]?.src) {
+      await cacheImageSize(env.PRODUCTS_KV, product.images[0].src, product.slug, 0, 'lg', true);
+      await cacheImageSize(env.PRODUCTS_KV, product.images[0].src, product.slug, 0, 'xl', true);
     }
   }
 
@@ -1875,78 +2009,6 @@ async function verifyWebhookSignature(
     console.error('Signature verification error:', error);
     return false;
   }
-}
-
-// WordPress-generated square variants we may serve instead of the full-size original,
-// ascending. Presence varies per upload, so a candidate is only ever used after the
-// fetch below confirms it exists — we never construct a URL and hope.
-const WP_SQUARE_VARIANTS = [100, 150, 300, 361, 768];
-
-// Thumbnails render in a 94px box (and are CSS-blurred unless active), so 300px stays
-// crisp past 3x DPR. This is an UPGRADE on the 100x100 the sync caches, not a downgrade:
-// the only thing it replaces is the full-size original, which no thumbnail can display.
-const THUMB_MIN_PX = 300;
-
-/**
- * Fetch an on-the-fly Cloudflare transform at `width`, in the best format the CLIENT accepts.
- * Returns null when the client has no modern-format support (callers then serve the PNG
- * variant) or when Image Transformations is unavailable, so this can only ever improve things.
- *
- * ⚠️ The Accept header MUST be forwarded: Cloudflare picks the output format from the
- * request's Accept even when the URL says format=avif. A bare fetch() yields PNG every time.
- */
-async function fetchTransformed(
-  originalUrl: string,
-  width: number,
-  accept: string,
-  requestedFormat: string | null
-): Promise<Response | null> {
-  const negotiated = requestedFormat === 'webp' ? 'webp'
-    : accept.includes('image/avif') ? 'avif'
-    : accept.includes('image/webp') ? 'webp'
-    : null;
-  if (!negotiated) return null;
-
-  try {
-    const u = new URL(originalUrl);
-    const cdnCgiUrl = `${u.origin}/cdn-cgi/image/fit=contain,quality=85,width=${width},format=${negotiated}${u.pathname}`;
-    const response = await fetch(cdnCgiUrl, { headers: { Accept: accept } });
-    if (response.ok) return response;
-  } catch (e) {
-    // Transformations unavailable - caller falls back to the sized PNG variant
-  }
-  return null;
-}
-
-/**
- * Fetch the smallest WordPress variant that is at least `minPx` wide and actually exists.
- * Returns null if none can be confirmed, so callers keep their existing behaviour.
- * Responses are cached at the edge, so the probe cost is paid once per image.
- */
-async function fetchSizedVariant(originalUrl: string, minPx: number): Promise<Response | null> {
-  // WordPress names variants after the PRE-SCALE basename: an upload stored as
-  // "shirt-scaled.png" has variants called "shirt-768x768.png", NOT
-  // "shirt-scaled-768x768.png". Try both spellings or -scaled uploads find nothing
-  // and fall back to a multi-MB original.
-  const bases = [originalUrl];
-  const unscaled = originalUrl.replace(/-scaled(\.[^.]+)$/, '$1');
-  if (unscaled !== originalUrl) bases.push(unscaled);
-
-  for (const px of WP_SQUARE_VARIANTS) {
-    if (px < minPx) continue;
-    for (const base of bases) {
-      const candidate = base.replace(/(\.[^.]+)$/, `-${px}x${px}$1`);
-      try {
-        const response = await fetch(candidate, {
-          cf: { cacheEverything: true, cacheTtl: 604800 },
-        });
-        if (response.ok) return response;
-      } catch (e) {
-        // Network/WP failure - fall through and let the caller redirect to the original
-      }
-    }
-  }
-  return null;
 }
 
 // Request handler
@@ -2921,38 +2983,40 @@ export default {
         return new Response('Missing post slug', { status: 400 });
       }
 
-      // Get image from KV with metadata (post images are stored with 'post:' prefix)
-      const { value: base64Image, metadata } = await env.PRODUCTS_KV.getWithMetadata<{
-        contentType: string;
-        originalUrl: string;
-        syncedAt: string;
-      }>(`image:post:${slug}`);
+      // Post images are stored with the 'post:' prefix: base64 from the sync, or raw bytes when
+      // filled below. A filled copy remembers its source so a new featured image refills it.
+      const kvKey = `image:post:${slug}`;
+      const cached = await env.PRODUCTS_KV.getWithMetadata<ImageMetadata>(kvKey, 'arrayBuffer');
+      const post = await env.PRODUCTS_KV.get<SyncedPost>(`post:slug:${slug}`, 'json');
+      if (cached.value && (!cached.metadata?.sourceSrc || cached.metadata.sourceSrc === post?.featuredImage)) {
+        return productImageResponse(cached.value, cached.metadata);
+      }
 
-      if (!base64Image) {
-        // Image not cached - try to get original URL from post data and redirect
-        const post = await env.PRODUCTS_KV.get<SyncedPost>(`post:slug:${slug}`, 'json');
-        if (post && post.featuredImage) {
-          // Redirect to original WordPress image
-          return Response.redirect(post.featuredImage, 302);
+      // Not cached yet: pull the featured image from WordPress once, server side, and keep it
+      // (posts are few) instead of redirecting the browser to WordPress.
+      if (post?.featuredImage) {
+        try {
+          const response = await fetch(post.featuredImage, { cf: { cacheEverything: true, cacheTtl: 604800 } });
+          if (response.ok) {
+            const bytes = await response.arrayBuffer();
+            const contentType = response.headers.get('content-type') || 'image/jpeg';
+            if (bytes.byteLength <= MAX_STORED_IMAGE_BYTES) {
+              ctx.waitUntil(env.PRODUCTS_KV.put(kvKey, bytes.slice(0), {
+                metadata: {
+                  contentType,
+                  sourceSrc: post.featuredImage,
+                  syncedAt: new Date().toISOString(),
+                  encoding: 'binary',
+                },
+              }));
+            }
+            return productImageResponse(bytes, { contentType, encoding: 'binary' });
+          }
+        } catch (e) {
+          console.error(`Post image fetch failed for ${slug}:`, e);
         }
-        return new Response('Post image not found', { status: 404 });
       }
-
-      // Decode base64 to binary
-      const binaryString = atob(base64Image);
-      const bytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
-
-      // Return image with caching headers
-      return new Response(bytes, {
-        headers: {
-          'Content-Type': metadata?.contentType || 'image/jpeg',
-          'Cache-Control': 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400',
-          'Access-Control-Allow-Origin': '*',
-        },
-      });
+      return new Response('Post image not found', { status: 404 });
     }
 
     // Health check endpoint (machine-parseable, returns 503 if degraded)
@@ -3177,242 +3241,64 @@ export default {
       const slug = pathParts[0];
       const imageIndex = pathParts[1] ? parseInt(pathParts[1], 10) : 0;
 
-      // Optional resizing parameters
-      const requestedWidth = url.searchParams.get('w');
-      const requestedFormat = url.searchParams.get('format');
-      const requestedSize = url.searchParams.get('size'); // 'thumb' for 300x300 thumbnails
-      // What the CLIENT can actually decode. Drives explicit AVIF/WebP negotiation below -
-      // it cannot be delegated to cdn-cgi's format=auto, which only sees the subrequest.
-      const acceptHeader = request.headers.get('Accept') || '';
-
-      if (!slug) {
+      if (!slug || Number.isNaN(imageIndex)) {
         return new Response('Missing product slug', { status: 400 });
       }
 
-      // Key format: image:{slug} for main (index 0), image:{slug}:{index} for gallery
-      // Add :thumb suffix if requesting thumbnail size
-      let kvKey = imageIndex === 0 ? `image:${slug}` : `image:${slug}:${imageIndex}`;
-      if (requestedSize === 'thumb') {
-        kvKey += ':thumb';
+      // Every size comes from KV, or - until it is cached - from Cloudflare's cache of one
+      // server-side fetch. The browser is never redirected to WordPress. ?w= (older URLs)
+      // maps onto the nearest cached size.
+      const requestedSize = url.searchParams.get('size');
+      const requestedWidth = parseInt(url.searchParams.get('w') || '0', 10);
+      const size: ImageSize =
+        requestedSize === 'thumb' || requestedSize === 'lg' || requestedSize === 'xl' ? requestedSize
+        : requestedWidth > 800 ? 'xl'
+        : requestedWidth > 400 ? 'lg'
+        : 'full';
+
+      const kvKey = productImageKey(slug, imageIndex, size);
+      const cached = await env.PRODUCTS_KV.getWithMetadata<ImageMetadata>(kvKey, 'arrayBuffer');
+      if (cached.value) {
+        return productImageResponse(cached.value, cached.metadata);
       }
 
-      // Get image from KV with metadata
-      let { value: base64Image, metadata } = await env.PRODUCTS_KV.getWithMetadata<{
-        contentType: string;
-        originalUrl: string;
-        syncedAt: string;
-        imageIndex?: number;
-        size?: string;
-      }>(kvKey);
-
-      // If requesting thumb but not cached, fall back to full size
-      if (!base64Image && requestedSize === 'thumb') {
-        const fullKey = imageIndex === 0 ? `image:${slug}` : `image:${slug}:${imageIndex}`;
-        const fullResult = await env.PRODUCTS_KV.getWithMetadata<{
-          contentType: string;
-          originalUrl: string;
-          syncedAt: string;
-          imageIndex?: number;
-          size?: string;
-        }>(fullKey);
-        if (fullResult.value) {
-          base64Image = fullResult.value;
-          metadata = fullResult.metadata;
+      // Not cached at this size yet: the sync fills the first MAX_GALLERY_IMAGES images at
+      // 361/100 and the main image at 768/1024; anything else is pulled from WordPress here.
+      const product = await env.PRODUCTS_KV.get<SyncedProduct>(`product:slug:${slug}`, 'json');
+      const src = product?.images?.[imageIndex]?.src;
+      if (src) {
+        const image = await fetchImageForSize(src, size);
+        if (image) {
+          // Keep it in KV only inside the sync-managed range, so KV writes stay bounded (the
+          // sync clears these when a product's images change); later images live in
+          // Cloudflare's cache of the subrequest.
+          if (imageIndex < MAX_GALLERY_IMAGES) {
+            ctx.waitUntil(env.PRODUCTS_KV.put(kvKey, image.bytes.slice(0), {
+              metadata: {
+                contentType: image.contentType,
+                sourceSrc: src,
+                syncedAt: new Date().toISOString(),
+                imageIndex,
+                size,
+                encoding: 'binary',
+              },
+            }));
+          }
+          return productImageResponse(image.bytes, { contentType: image.contentType, encoding: 'binary' });
         }
       }
 
-      if (!base64Image) {
-        // Image not cached - try to get original URL from product data and redirect
-        const product = await env.PRODUCTS_KV.get<SyncedProduct>(`product:slug:${slug}`, 'json');
-        if (product && product.images && product.images[imageIndex]) {
-          // Redirect to WordPress image URL (with optional resizing via cdn-cgi)
-          const originalUrl = product.images[imageIndex].src;
-          if (originalUrl) {
-            // A thumbnail must never fall back to the full-size original: it renders in a
-            // 94px box, so redirecting here was shipping ~600KB to paint ~5KB worth of pixels.
-            // Serve WordPress's own sized variant instead; if none can be confirmed we fall
-            // through to the original exactly as before.
-            if (requestedSize === 'thumb') {
-              // Prefer a transformed AVIF/WebP (~5-8KB) over WordPress's 300x300 PNG (~23KB).
-              // Same 300px dimensions either way, so nothing gets softer. Clients without
-              // modern-format support fall through to the PNG variant below, unchanged.
-              const transformed = await fetchTransformed(originalUrl, THUMB_MIN_PX, acceptHeader, requestedFormat);
-              if (transformed) {
-                const headers = new Headers(transformed.headers);
-                headers.set('Cache-Control', 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400');
-                headers.set('Access-Control-Allow-Origin', '*');
-                headers.set('Vary', 'Accept');
-                return new Response(transformed.body, { status: 200, headers });
-              }
-
-              const variant = await fetchSizedVariant(originalUrl, THUMB_MIN_PX);
-              if (variant) {
-                const headers = new Headers(variant.headers);
-                headers.set('Cache-Control', 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400');
-                headers.set('Access-Control-Allow-Origin', '*');
-                return new Response(variant.body, { status: 200, headers });
-              }
-            }
-
-            // If resizing requested, use Cloudflare cdn-cgi Image Resizing
-            if (requestedWidth || requestedFormat) {
-              const options: string[] = ['fit=contain', 'quality=85'];
-              if (requestedWidth) {
-                options.push(`width=${requestedWidth}`);
-              }
-              // ⚠️ Negotiate the format from the CLIENT's Accept and ask for it EXPLICITLY.
-              // format=auto does NOT work here: it negotiates against the SUBREQUEST's Accept,
-              // and a bare fetch() sends none - which is why this returned PNG to every client
-              // even with Image Transformations enabled. Explicit formats also give each one
-              // its own cdn-cgi URL, so they cache separately instead of relying on Vary.
-              const negotiated = requestedFormat === 'webp' ? 'webp'
-                : acceptHeader.includes('image/avif') ? 'avif'
-                : acceptHeader.includes('image/webp') ? 'webp'
-                : null;
-              if (negotiated) {
-                options.push(`format=${negotiated}`);
-              }
-              try {
-                const originalUrlObj = new URL(originalUrl);
-                const cdnCgiUrl = `${originalUrlObj.origin}/cdn-cgi/image/${options.join(',')}${originalUrlObj.pathname}`;
-                // ⚠️ MUST forward the client's Accept. Cloudflare gates the output format on
-                // the REQUEST's Accept even when the URL explicitly says format=avif, and a
-                // bare fetch() sends none - so every client got PNG. Verified against the
-                // live zone: format=avif + Accept:*/* returns image/png 186KB, while the very
-                // same URL with Accept: image/avif returns image/avif 47.8KB.
-                const resizedResponse = await fetch(cdnCgiUrl, {
-                  headers: { Accept: acceptHeader || 'image/*,*/*' },
-                });
-                if (resizedResponse.ok) {
-                  const headers = new Headers(resizedResponse.headers);
-                  headers.set('Cache-Control', 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400');
-                  headers.set('Access-Control-Allow-Origin', '*');
-                  // format=auto picks the format from Accept, so the cache key must include
-                  // it - otherwise an AVIF gets served to a client that cannot decode it.
-                  headers.set('Vary', 'Accept');
-                  return new Response(resizedResponse.body, {
-                    status: 200,
-                    headers
-                  });
-                }
-              } catch (e) {
-                // Fall through to redirect if resizing fails
-              }
-
-              // Same cdn-cgi caveat as the cached branch below: prefer a real sized
-              // variant over shipping the full-size original.
-              const widthPx = parseInt(requestedWidth || '0', 10);
-              if (widthPx > 0) {
-                const variant = await fetchSizedVariant(originalUrl, widthPx);
-                if (variant) {
-                  const headers = new Headers(variant.headers);
-                  headers.set('Cache-Control', 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400');
-                  headers.set('Access-Control-Allow-Origin', '*');
-                  return new Response(variant.body, { status: 200, headers });
-                }
-              }
-            }
-            return Response.redirect(originalUrl, 302);
-          }
-        }
-        return new Response('Image not found', { status: 404 });
-      }
-
-      // If resizing requested, use Cloudflare Image Resizing via cdn-cgi URL
-      // This works on any Cloudflare-proxied domain (cf.image requires zone with Image Resizing)
-      if (requestedWidth || requestedFormat) {
-        let originalUrl = metadata?.originalUrl;
-
-        // Fallback: get originalUrl from product data if not in metadata
-        if (!originalUrl) {
-          const product = await env.PRODUCTS_KV.get<SyncedProduct>(`product:slug:${slug}`, 'json');
-          if (product && product.images && product.images[imageIndex]) {
-            originalUrl = product.images[imageIndex].src;
-          }
-        }
-
-        if (originalUrl) {
-          // Build cdn-cgi image URL options
-          const options: string[] = ['fit=contain', 'quality=85'];
-          if (requestedWidth) {
-            options.push(`width=${requestedWidth}`);
-          }
-          // See the note in the uncached branch: negotiate explicitly from the client's
-          // Accept, because format=auto would negotiate against a subrequest that has none.
-          const negotiated = requestedFormat === 'webp' ? 'webp'
-            : acceptHeader.includes('image/avif') ? 'avif'
-            : acceptHeader.includes('image/webp') ? 'webp'
-            : null;
-          if (negotiated) {
-            options.push(`format=${negotiated}`);
-          }
-
-          // Extract path from original URL (e.g., /wp-content/uploads/...)
-          // URL format: https://staging.hercules-merchandising.fr/cdn-cgi/image/options/path
-          try {
-            const originalUrlObj = new URL(originalUrl);
-            const cdnCgiUrl = `${originalUrlObj.origin}/cdn-cgi/image/${options.join(',')}${originalUrlObj.pathname}`;
-
-            // See the note in the uncached branch - Cloudflare picks the format from the
-            // REQUEST's Accept, so it has to be forwarded or the client always gets PNG.
-            const resizedResponse = await fetch(cdnCgiUrl, {
-              headers: { Accept: acceptHeader || 'image/*,*/*' },
-            });
-            if (resizedResponse.ok) {
-              const headers = new Headers(resizedResponse.headers);
-              headers.set('Cache-Control', 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400');
-              headers.set('Access-Control-Allow-Origin', '*');
-              // See the note in the uncached branch - format=auto varies by Accept.
-              headers.set('Vary', 'Accept');
-              return new Response(resizedResponse.body, {
-                status: 200,
-                headers
-              });
-            }
-          } catch (e) {
-            // Fall through to serve original if resizing fails
-            console.error('Cloudflare cdn-cgi Image Resizing failed:', e);
-          }
-
-          // Cloudflare Image Resizing is NOT enabled on every zone (FR returns 404 for
-          // /cdn-cgi/image/...), so without this we would fall through and serve the small
-          // cached copy at a size the caller explicitly asked to be LARGER - a silent
-          // quality downgrade. Serve WordPress's own variant at or above the requested width.
-          //
-          // ⚠️ Derive the variant from the CANONICAL product image, not from
-          // metadata.originalUrl: the latter is the URL the sync fetched to populate KV,
-          // which for the main image is already "-361x361", so appending a size to it
-          // produces "...-361x361-768x768.png" and always 404s.
-          const widthPx = parseInt(requestedWidth || '0', 10);
-          if (widthPx > 0) {
-            const canonicalProduct = await env.PRODUCTS_KV.get<SyncedProduct>(`product:slug:${slug}`, 'json');
-            const canonicalUrl = canonicalProduct?.images?.[imageIndex]?.src || originalUrl;
-            const variant = await fetchSizedVariant(canonicalUrl, widthPx);
-            if (variant) {
-              const headers = new Headers(variant.headers);
-              headers.set('Cache-Control', 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400');
-              headers.set('Access-Control-Allow-Origin', '*');
-              return new Response(variant.body, { status: 200, headers });
-            }
-          }
+      // No usable copy at this size: fall back to the 361px KV copy, never to WordPress
+      if (size !== 'full') {
+        const fallback = await env.PRODUCTS_KV.getWithMetadata<ImageMetadata>(
+          productImageKey(slug, imageIndex, 'full'),
+          'arrayBuffer'
+        );
+        if (fallback.value) {
+          return productImageResponse(fallback.value, fallback.metadata);
         }
       }
-
-      // Decode base64 to binary (original image)
-      const binaryString = atob(base64Image);
-      const bytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
-
-      // Return image with caching headers
-      return new Response(bytes, {
-        headers: {
-          'Content-Type': metadata?.contentType || 'image/png',
-          'Cache-Control': 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400',
-          'Access-Control-Allow-Origin': '*',
-        },
-      });
+      return new Response('Image not found', { status: 404 });
     }
 
     // Serve cached category images

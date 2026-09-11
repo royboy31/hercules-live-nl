@@ -9,15 +9,25 @@
  *       https://hercules-merchandising.fr/products/echarpe-personnalisee-sublimee
  *
  * Since we can't fix the source, we rewrite these links at render time as the
- * raw HTML is injected via `set:html`. Only links pointing at the FR host (or
- * root-relative `/…` links) are touched — external URLs, mailto/tel, assets
- * with file extensions, cache-buster query strings, and legitimate `#anchor`
- * fragments are left exactly as-is.
+ * raw HTML is injected via `set:html`. Only links pointing at an internal host (or
+ * root-relative `/…` links) are touched — external URLs, mailto/tel, cache-buster
+ * query strings, and legitimate `#anchor` fragments are left exactly as-is.
+ *
+ * NL: the content was cloned from FR, so links to the FR host are internal links,
+ * and the NL WordPress hosts (temporary and final) serve the same catalogue. Links
+ * on any of them become root-relative, so they open on whichever host serves the
+ * site (the edge router sends /wp-content/* to WordPress) and never on live FR.
  *
  * See hercules-fr-seo-cleanup-audit.md (§"Wrong Internal Links").
  */
 
-const FR_HOST = 'hercules-merchandising.fr';
+const INTERNAL_HOSTS = new Set([
+  'hercules-merchandising.fr',
+  'www.hercules-merchandising.fr',
+  'nl.hercules-merchandising.fr',
+  'hercules-merchandise.nl',
+  'www.hercules-merchandise.nl',
+]);
 
 /** Normalize a single URL string. Returns the input unchanged if not an internal link we fix. */
 function normalizeUrl(input: string): string {
@@ -44,19 +54,17 @@ function normalizeUrl(input: string): string {
   }
 
   // Isolate the pathname and, for absolute URLs, verify the host is ours.
-  let prefix = ''; // scheme + host for absolute URLs; '' for root-relative
   let path: string;
 
   const absMatch = s.match(/^((?:https?:)?\/\/[^/]+)(\/.*)?$/i);
   if (absMatch) {
     const hostname = absMatch[1].replace(/^(https?:)?\/\//i, '').toLowerCase();
-    if (hostname !== FR_HOST && hostname !== `www.${FR_HOST}`) {
+    if (!INTERNAL_HOSTS.has(hostname)) {
       return original; // external host — leave untouched
     }
-    prefix = absMatch[1];
-    path = absMatch[2] || '/';
+    path = absMatch[2] || '/'; // internal: made root-relative below
   } else if (s.startsWith('//')) {
-    return original; // protocol-relative to a non-FR host
+    return original; // protocol-relative to an external host
   } else if (s.startsWith('/')) {
     path = s; // root-relative internal link
   } else {
@@ -76,7 +84,7 @@ function normalizeUrl(input: string): string {
     if (!hasFileExt) path += '/';
   }
 
-  return prefix + path + query + hash;
+  return path + query + hash;
 }
 
 /**

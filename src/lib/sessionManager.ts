@@ -34,6 +34,12 @@ type SessionListener = (session: SessionData | null, loading: boolean, error: st
 const CACHE_KEY = 'hercules_session';
 const CACHE_DURATION = 10000; // 10 seconds
 
+const GUEST_SESSION: SessionData = {
+  logged_in: false,
+  user: null,
+  cart: { count: 0, total: '0,00 €', subtotal: '0,00 €', items: [] },
+};
+
 class SessionManager {
   private static instance: SessionManager;
   private session: SessionData | null = null;
@@ -65,8 +71,9 @@ class SessionManager {
       return '/wp-json/hercules/v1/session';
     }
 
-    // Any other host (pages.dev previews) reads the NL WP clone, never a live site.
-    return 'https://nl.hercules-merchandising.fr/wp-json/hercules/v1/session';
+    // Any other host (pages.dev previews) is Astro-only: no WordPress call at all, never a
+    // live site. The NL clone sits behind Basic auth and would pop a password prompt.
+    return '';
   }
 
   private notifyListeners() {
@@ -120,6 +127,7 @@ class SessionManager {
 
     const apiUrl = this.getApiUrl();
     if (!apiUrl) {
+      this.session = GUEST_SESSION;
       this.loading = false;
       this.notifyListeners();
       return;
@@ -161,11 +169,7 @@ class SessionManager {
         console.error('Failed to fetch session:', err);
         this.error = err instanceof Error ? err.message : 'Unknown error';
         // Set default session on error
-        this.session = {
-          logged_in: false,
-          user: null,
-          cart: { count: 0, total: '0,00 €', subtotal: '0,00 €', items: [] },
-        };
+        this.session = GUEST_SESSION;
       } finally {
         this.loading = false;
         this.fetchPromise = null;

@@ -69,15 +69,15 @@ const galleryImages = (product.images || []).slice(0, imageCount).map((img, inde
   return {
     thumb: `${baseUrl}?size=thumb`,  // 100x100 cached thumbnail (~2-5KB)
     main: baseUrl,                    // 361x361 cached main image (~10-15KB WebP)
-    original: img.src,                // Original WordPress URL (full resolution)
+    original: `${baseUrl}?size=lg`,   // 768px KV copy - the 2x upgrade (never WordPress)
     alt: img.alt || product.name
   };
 });
 
 // Worker main image URL - 361x361 cached WebP image
 const workerImageUrl = `/product-image/${product.slug}`;
-// Original WordPress URL - full resolution for progressive upgrade
-const originalImageUrl = product.images?.[0]?.src || workerImageUrl;
+// 768px KV copy for the progressive upgrade - crisp at 2x on a 361px card, never WordPress
+const originalImageUrl = `${workerImageUrl}?size=lg`;
 
 // Format price - just show the base price like WooCommerce does
 let priceDisplay = '';
@@ -150,7 +150,7 @@ const ga4Item = {
 
     <!-- Product Gallery -->
     <div class="kd-product-gallery" data-product-slug={product.slug}>
-      <!-- Main Image - Progressive Loading: Worker cached (361x361) first, then original WordPress -->
+      <!-- Main Image - Progressive Loading: Worker cached (361x361) first, then the 768px KV copy -->
       <div class="kd-main-image">
         <img
           src={workerImageUrl}
@@ -464,7 +464,7 @@ const ga4Item = {
   /**
    * Progressive Image Loading
    * - Loads Worker cached image (361x361) first for fast initial paint
-   * - Upgrades to original WordPress image (1000x1000) when entering viewport
+   * - Upgrades to the 768px KV copy (/product-image/...?size=lg) when entering viewport
    */
   const upgradedImages = new WeakSet<Element>();
 

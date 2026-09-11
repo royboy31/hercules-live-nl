@@ -312,19 +312,15 @@ const wpThumb = (url: string, size: number) => {
   return url.replace(/\.(jpg|jpeg|png|gif|webp)$/i, `-${size}x${size}.$1`);
 };
 
-// Generate Worker API image URL (cached on Cloudflare edge, served as WebP)
-const workerImage = (index: number) => `${WORKER_URL}/image/${slug}/${index}`;
-const workerThumb = (index: number) => `${WORKER_URL}/image/${slug}/${index}?size=thumb`;
-
-// Display-sized image for the main gallery slot. The Worker guarantees a valid response
-// here (it serves WordPress's own sized variant, or the original when none exists), so
-// this URL is safe in src/srcset without a build-time existence check - which matters
-// because ~4% of uploads are "-scaled" and have no predictably-named variant.
-const workerSized = (index: number, width: number) => `${WORKER_URL}/image/${slug}/${index}?w=${width}`;
-
-// The main image renders in a 588px box. 768 covers it at 1x; the full-resolution
-// original is offered at 2x so retina displays lose no detail.
-const MAIN_IMAGE_WIDTH = 768;
+// Every product image comes from the product-sync worker's KV through /product-image/*
+// (same origin: the edge router answers it on the real domain and caches it at the edge; a
+// Pages Function answers it on bare pages.dev). The browser never loads from WordPress.
+// Sizes: default 361x361, thumb 100x100, lg 768px, xl 1024px. The worker fills any size it
+// has not cached yet from WordPress once, server side.
+const productImageUrl = (index: number, size?: 'thumb' | 'lg' | 'xl') =>
+  `/product-image/${slug}/${index}${size ? `?size=${size}` : ''}`;
+const workerImage = (index: number) => productImageUrl(index);
+const workerThumb = (index: number) => productImageUrl(index, 'thumb');
 
 // Convert image URL to WebP format (WordPress fallback)
 const toWebP = (url: string) => {
@@ -332,21 +328,18 @@ const toWebP = (url: string) => {
   return url + '.webp';
 };
 
-// Get gallery images - Worker cached for fast LCP, WordPress for high-quality upgrade
+// Get gallery images - all KV copies: 361 for the lightbox fallback, 768 for the 588px main
+// slot at 1x, 1024 for 2x and the lightbox
 const getGalleryImages = () => {
   if (!product?.images?.length) return [];
   return product.images.map((img: any, index: number) => {
-    // Worker API images (cached on Cloudflare edge, WebP format) - fast but 361x361
     const workerSrc = workerImage(index);
     const workerThumbSrc = workerThumb(index);
 
-    // WordPress full-size URL - higher quality for progressive enhancement
-    const fullSrc = img.src || img.local_src;
-
     return {
-      src: workerSrc,           // Worker cached image (361x361) - still used by the lightbox fallback
-      srcDisplay: workerSized(index, MAIN_IMAGE_WIDTH), // Correctly-sized main image, in the HTML
-      srcFull: fullSrc,         // Full WordPress original - the 2x/lightbox source
+      src: workerSrc,           // 361x361 KV copy - still used by the lightbox fallback
+      srcDisplay: productImageUrl(index, 'lg'), // 768px KV copy for the main slot, in the HTML
+      srcFull: productImageUrl(index, 'xl'),    // 1024px KV copy - the 2x/lightbox source
       srcset: '',               // Unused - the main image builds its srcset inline
       alt: img.alt || product.name,
       thumbnail: workerThumbSrc, // Thumbnail from Worker (fast)
@@ -423,7 +416,10 @@ const productDescription = seoOverride?.metaDescription
       ? truncateDescription(stripHtml(product.description))
       : siteConfig.defaultDescription;
 
-const productImage = galleryImages[0]?.src || `${siteConfig.siteUrl}${siteConfig.defaultImage}`;
+// og:image / JSON-LD need an absolute URL: the worker's 1024px KV copy of the main image
+const productImage = galleryImages.length
+  ? `${WORKER_URL}/image/${slug}/0?size=xl`
+  : `${siteConfig.siteUrl}${siteConfig.defaultImage}`;
 
 // Build breadcrumb schema — prefer primary_category for consistent breadcrumbs
 const breadcrumbCat = product?.primary_category || product?.categories?.[0];
@@ -962,7 +958,7 @@ const ga4Item = product ? {
                   <li class="related-product-item">
                     <a href={`/products/${relProduct.slug}/`} class="related-product-link">
                       <img
-                        src={`${WORKER_URL}/image/${relProduct.slug}/0`}
+                        src={`/product-image/${relProduct.slug}`}
                         alt={relProduct.name}
                         loading="lazy"
                         decoding="async"
@@ -2846,8 +2842,8 @@ const ga4Item = product ? {
   const galleryImages: { src: string; alt: string }[] = [];
   document.querySelectorAll('.thumbnail-item img').forEach(img => {
     const imgEl = img as HTMLImageElement;
-    // Prefer the full-resolution original: the lightbox is where users go FOR detail,
-    // and it was showing the Worker's 361px copy. Loads on interaction, so it costs no LCP.
+    // Prefer the 1024px KV copy: the lightbox is where users go FOR detail, and it was
+    // showing the Worker's 361px copy. Loads on interaction, so it costs no LCP.
     const fullSrc = imgEl.dataset.originalSrc || imgEl.dataset.fullSrc;
     if (fullSrc) {
       galleryImages.push({
@@ -2935,13 +2931,13 @@ const ga4Item = product ? {
   }
 
   // Thumbnail gallery interaction - click on li or img to swap main image
-  // Uses progressive enhancement: show Worker image fast, then upgrade to WordPress
+  // Swaps to the 768px KV copy, with the 1024px copy as its 2x - never WordPress
   document.querySelectorAll('.thumbnail-item').forEach(item => {
     item.addEventListener('click', () => {
       const mainImg = document.getElementById('main-product-image') as HTMLImageElement;
       const img = item.querySelector('img') as HTMLImageElement;
       const displaySrc = img?.dataset.displaySrc || img?.dataset.fullSrc; // correctly-sized main image
-      const originalSrc = img?.dataset.originalSrc;                       // WordPress full quality
+      const originalSrc = img?.dataset.originalSrc;                       // 1024px KV copy (2x)
 
       if (mainImg && displaySrc) {
         // The <source> wins over the img on phones, so it has to move too - otherwise

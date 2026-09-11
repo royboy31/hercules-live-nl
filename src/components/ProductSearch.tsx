@@ -56,13 +56,10 @@ export default function ProductSearch({
       const data = await response.json();
 
       if (data.success && data.data.length > 0) {
-        // Fix thumbnail URLs to use correct worker domain
+        // Thumbnails already point at the worker that answered (KV images, per lane)
         const fixedResults = data.data.map((product: SearchResult) => ({
           ...product,
-          thumbnail: product.thumbnail?.replace(
-            'hercules-product-sync-fr-production.gilles-86d.workers.dev',
-            'hercules-product-sync-nl.gilles-86d.workers.dev'
-          ) || ''
+          thumbnail: product.thumbnail || ''
         }));
         setResults(fixedResults);
         setNoResults(false);

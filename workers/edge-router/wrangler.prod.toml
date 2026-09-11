@@ -4,6 +4,9 @@
 name = "hercules-edge-router-nl-prod"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
+# workers.dev -> workers.dev fetches inside one account are refused (error 1042) unless they go
+# out as public requests. Harmless on the .nl custom-domain route later.
+compatibility_flags = ["global_fetch_strictly_public"]
 
 [vars]
 ASTRO_ORIGIN = "https://hercules-nl.pages.dev"

@@ -47,24 +47,6 @@ interface UserData {
   avatar: string;
 }
 
-// Use the same domain when accessed through Edge Router, otherwise the NL WP clone
-// (pages.dev previews) — never a live site.
-const getBaseUrl = () => {
-  if (typeof window === 'undefined') return '';
-
-  const hostname = window.location.hostname;
-
-  if (
-    hostname.includes('hercules-edge-router') ||
-    hostname.includes('hercules-merchandise.nl') ||
-    hostname === 'localhost'
-  ) {
-    return '';
-  }
-
-  return 'https://nl.hercules-merchandising.fr';
-};
-
 export default function UserSession({ type }: UserSessionProps) {
   // Cart state from localStorage
   const [cart, setCart] = useState<CartData>(cartStore.get());
@@ -89,9 +71,9 @@ export default function UserSession({ type }: UserSessionProps) {
   const removeFromCart = async (cartItemKey: string) => {
     setRemovingItem(cartItemKey);
     try {
-      const baseUrl = getBaseUrl();
-
-      const response = await fetch(`${baseUrl}/wp-json/hercules/v1/cart/remove`, {
+      // Same-origin only: the edge router serves WordPress on the real domain; a pages.dev
+      // preview gets a plain 404 rather than a call to WordPress.
+      const response = await fetch('/wp-json/hercules/v1/cart/remove', {
         method: 'POST',
         credentials: 'include',
         headers: {
