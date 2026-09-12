@@ -10,7 +10,16 @@ import CustomerReviews from '../components/CustomerReviews.astro';
 import homepageData from '../data/homepage-products.json';
 import { siteConfig } from '../config/seo';
 
-const products = homepageData.products;
+// homepage-products.json stores absolute image URLs on the production worker.
+// Point them at whichever lane this build targets, so a staging build does not
+// read images out of the production KV (see WORKER_URL in the other pages).
+const WORKER_URL = import.meta.env.WORKER_URL || 'https://hercules-product-sync-nl-prod.gilles-86d.workers.dev';
+const products = homepageData.products.map((p) => ({
+  ...p,
+  image: typeof p.image === 'string'
+    ? p.image.replace(/^https:\/\/hercules-product-sync-nl(?:-prod)?\.gilles-86d\.workers\.dev/, WORKER_URL)
+    : p.image,
+}));
 
 // SEO configuration for homepage
 const pageTitle = 'Sjaals, shirts en sportmerchandise op maat';
