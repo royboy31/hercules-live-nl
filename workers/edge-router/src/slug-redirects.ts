@@ -1,5 +1,6 @@
-// Generated from ~/dev/hercules/nl/translation/slug-map.json (2026-09-12) - regenerate, don't hand-edit.
-// French product/collection slugs inherited from the FR clone (untranslated blog posts, old e-mails,
+// Generated from ~/dev/hercules/nl/translation/slug-map.json and out/posts-*.nl.json (2026-09-12)
+// by gen-slug-redirects.py - regenerate, don't hand-edit.
+// French product/collection/blog slugs inherited from the FR clone (untranslated pages, old e-mails,
 // external links) -> the Dutch slug, answered with a 301 by the edge router.
 
 export const PRODUCT_SLUG_REDIRECTS: Record<string, string> = {
@@ -143,4 +144,23 @@ export const COLLECTION_SLUG_REDIRECTS: Record<string, string> = {
   'tenues-de-sport': 'sportkleding',
   'textile-sport-personnalise': 'textiel-bedrukken',
   'volleyball': 'volleybal',
+};
+
+export const POST_SLUG_REDIRECTS: Record<string, string> = {
+  'comment-enlever-lodeur-de-transpiration-sur-les-maillots-de-foot': 'zweetgeur-uit-voetbalshirt-verwijderen',
+  'creer-maillot-football-personnalise': 'een-voetbalshirt-op-maat-maken',
+  'des-maillots-echarpes-et-bonnets-pour-une-pub-de-mcdonalds': 'shirts-sjaals-en-mutsen-voor-een-mcdonalds-reclamespot',
+  'fabrication-maillot-football-personnalise-echarpe': 'bezoek-aan-onze-productiesites-in-portugal',
+  'faut-il-suspendre-ou-plier-un-maillot-de-foot': 'voetbalshirt-ophangen-of-opvouwen',
+  'maillot-de-football-regles-retirer-son-maillot': 'waarom-mag-een-voetballer-zijn-shirt-niet-uittrekken',
+  'maillot-football-brique-house': 'voetbalshirts-op-maat-voor-brique-house',
+  'maillot-football-retro-liga': 'retro-weekend-in-het-spaanse-voetbal',
+  'maillot-personnalise-vs-equipementier': 'voetbalshirt-op-maat-vs-klassieke-kledingleverancier',
+  'maillots-de-running-personnalises-pour-larmee-belge': 'loopshirts-op-maat-voor-het-belgische-leger',
+  'maillots-football-retro-personnalises-pour-la-raal': 'retro-voetbalshirts-op-maat-voor-raal-la-louviere',
+  'pourquoi-les-gardiens-portent-des-maillots-de-couleurs-differentes': 'waarom-dragen-keepers-een-shirt-in-een-andere-kleur',
+  'pourquoi-maillot-personnalise-moins-cher': 'waarom-sommige-leveranciers-van-shirts-op-maat-duurder-zijn',
+  'quelle-couleur-pour-un-maillot-de-foot-decouvrez-la-symbolique-des-couleurs': 'welke-kleur-voor-een-voetbalshirt-symboliek-van-kleuren',
+  'quelques-conseils-pour-entretenir-correctement-son-maillot-de-foot': 'tips-om-uw-voetbalshirt-goed-te-onderhouden',
+  'qui-doit-changer-de-maillot-de-football-en-cas-de-couleurs-similaires': 'wie-moet-van-voetbalshirt-wisselen-bij-gelijke-kleuren',
 };

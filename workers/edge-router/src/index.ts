@@ -5,7 +5,7 @@
  * on the same domain for seamless cookie/session sharing.
  */
 
-import { PRODUCT_SLUG_REDIRECTS, COLLECTION_SLUG_REDIRECTS } from './slug-redirects';
+import { PRODUCT_SLUG_REDIRECTS, COLLECTION_SLUG_REDIRECTS, POST_SLUG_REDIRECTS } from './slug-redirects';
 
 interface Env {
   ASTRO_ORIGIN: string;
@@ -222,6 +222,15 @@ export default {
       const nlSlug = table[slugMatch[2]];
       if (nlSlug) {
         return Response.redirect(new URL(`/${slugMatch[1]}/${nlSlug}/${search}`, url.origin).toString(), 301);
+      }
+    }
+
+    // French blog post slugs (see slug-redirects.ts) -> the Dutch slug
+    const postMatch = pathname.match(/^\/blogs\/news\/([^/]+)\/?$/);
+    if (postMatch) {
+      const nlPostSlug = POST_SLUG_REDIRECTS[postMatch[1]];
+      if (nlPostSlug) {
+        return Response.redirect(new URL(`/blogs/news/${nlPostSlug}/${search}`, url.origin).toString(), 301);
       }
     }
 
