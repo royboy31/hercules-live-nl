@@ -4,9 +4,9 @@
 name = "hercules-edge-router-nl-prod"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
-# workers.dev -> workers.dev fetches inside one account are refused (error 1042) unless they go
-# out as public requests. Harmless on the .nl custom-domain route later.
-compatibility_flags = ["global_fetch_strictly_public"]
+# NO "global_fetch_strictly_public": on a zone route it makes the self-fetch re-enter the Worker
+# (every WP path 503, seen on the staging lane 2026-09-17). Without a route this lane's WP
+# paths do not work from workers.dev - the frontend is the routed staging host.
 
 [vars]
 ASTRO_ORIGIN = "https://hercules-nl.pages.dev"

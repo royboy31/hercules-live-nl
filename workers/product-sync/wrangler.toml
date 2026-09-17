@@ -6,7 +6,7 @@ compatibility_date = "2024-01-01"
 
 [vars]
 # NL WordPress origin (temporary build hostname until hercules-merchandise.nl is live)
-WC_STORE_URL = "https://nl.hercules-merchandising.fr"
+WC_STORE_URL = "https://staging.hercules-merchandise.nl"
 WORKER_BASE_URL = "https://hercules-product-sync-nl.gilles-86d.workers.dev"
 # WEBHOOK_SECRET is a secret: `wrangler secret put WEBHOOK_SECRET` (not a var, unlike FR)
 GITHUB_OWNER = "royboy31"

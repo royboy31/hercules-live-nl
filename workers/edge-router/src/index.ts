@@ -200,8 +200,14 @@ export default {
     const url = new URL(request.url);
     const { pathname, search } = url;
 
-    // Staging (and the temporary nl. host, which IS the NL staging lane): block all search engine indexing
-    if (url.hostname.startsWith('staging.') || url.hostname === 'nl.hercules-merchandising.fr') {
+    // The temporary hostname on the FR zone hands over to the real staging host on the .nl zone:
+    // one 301, path + query preserved. Keep this until the nl. route and A record are removed.
+    if (url.hostname === 'nl.hercules-merchandising.fr') {
+      return Response.redirect(`https://staging.hercules-merchandise.nl${pathname}${search}`, 301);
+    }
+
+    // Staging: block all search engine indexing
+    if (url.hostname.startsWith('staging.')) {
       if (pathname === '/robots.txt') {
         return new Response('User-Agent: *\nDisallow: /\n', {
           headers: { 'Content-Type': 'text/plain' },

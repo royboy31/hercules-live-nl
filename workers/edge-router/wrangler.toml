@@ -1,9 +1,7 @@
 # Hercules NL — edge router, STAGING lane.
-# Fronts the temporary hostname nl.hercules-merchandising.fr (an A record on the FR zone, the
-# only NL foothold there) the way FR's router fronts staging.hercules-merchandising.fr:
-# Astro pages from Pages, WordPress paths proxied to the NL clone on the same host.
-# The route is host-scoped on purpose: never "hercules-merchandising.fr/*" or any other live host.
-# When the hercules-merchandise.nl zone exists, the route moves to staging.hercules-merchandise.nl.
+# Fronts staging.hercules-merchandise.nl the way FR's router fronts staging.hercules-merchandising.fr:
+# Astro pages from Pages, WordPress paths proxied to the NL clone on the same host. The old
+# nl.hercules-merchandising.fr route (FR zone, host-scoped on purpose) only redirects now.
 name = "hercules-edge-router-nl"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
@@ -14,13 +12,20 @@ compatibility_date = "2024-01-01"
 
 [vars]
 ASTRO_ORIGIN = "https://hercules-nl-staging.pages.dev"
-WORDPRESS_ORIGIN = "https://nl.hercules-merchandising.fr"
+WORDPRESS_ORIGIN = "https://staging.hercules-merchandise.nl"
 PRODUCT_SYNC_WORKER_URL = "https://hercules-product-sync-nl.gilles-86d.workers.dev"
-# Same trick as FR's router: resolve the WordPress origin straight to the server IP so APO
-# (enabled on the FR zone, which this hostname belongs to) cannot strip cookies. The Host
-# header stays nl.hercules-merchandising.fr, so Plesk serves the NL vhost; FR is never touched.
-ORIGIN_RESOLVE_HOST = "origin.hercules-merchandising.fr"
+# Same trick as FR's router: resolve the WordPress origin straight to the server IP (grey-cloud
+# `origin` record on the .nl zone) so Cloudflare never re-enters the route or APO-caches WP HTML.
+# The Host header stays staging.hercules-merchandise.nl, so Plesk serves the NL vhost.
+ORIGIN_RESOLVE_HOST = "origin.hercules-merchandise.nl"
 
+# Real staging host on the NL zone (zone hercules-merchandise.nl, in the same account).
+[[routes]]
+pattern = "staging.hercules-merchandise.nl/*"
+zone_name = "hercules-merchandise.nl"
+
+# Temporary host on the FR zone: the Worker 301s it to the staging host (see src/index.ts).
+# Remove this route + the nl A record once nothing links to it any more.
 [[routes]]
 pattern = "nl.hercules-merchandising.fr/*"
 zone_name = "hercules-merchandising.fr"
