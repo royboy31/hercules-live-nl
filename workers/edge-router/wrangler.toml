@@ -1,18 +1,25 @@
 # Hercules NL — edge router, STAGING lane.
-# No [[routes]] yet: the hercules-merchandise.nl zone does not exist. Routes go on the
-# .nl zone ONLY — never on hercules-merchandising.fr or any other live zone.
+# Fronts the temporary hostname nl.hercules-merchandising.fr (an A record on the FR zone, the
+# only NL foothold there) the way FR's router fronts staging.hercules-merchandising.fr:
+# Astro pages from Pages, WordPress paths proxied to the NL clone on the same host.
+# The route is host-scoped on purpose: never "hercules-merchandising.fr/*" or any other live host.
+# When the hercules-merchandise.nl zone exists, the route moves to staging.hercules-merchandise.nl.
 name = "hercules-edge-router-nl"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
 # workers.dev -> workers.dev fetches inside one account are refused (error 1042) unless they go
-# out as public requests. FR never hits this: its router runs on a custom-domain route.
+# out as public requests. Harmless on the custom-domain route.
 compatibility_flags = ["global_fetch_strictly_public"]
 
 [vars]
 ASTRO_ORIGIN = "https://hercules-nl-staging.pages.dev"
 WORDPRESS_ORIGIN = "https://nl.hercules-merchandising.fr"
 PRODUCT_SYNC_WORKER_URL = "https://hercules-product-sync-nl.gilles-86d.workers.dev"
+# Same trick as FR's router: resolve the WordPress origin straight to the server IP so APO
+# (enabled on the FR zone, which this hostname belongs to) cannot strip cookies. The Host
+# header stays nl.hercules-merchandising.fr, so Plesk serves the NL vhost; FR is never touched.
+ORIGIN_RESOLVE_HOST = "origin.hercules-merchandising.fr"
 
-# [[routes]]
-# pattern = "staging.hercules-merchandise.nl/*"
-# zone_name = "hercules-merchandise.nl"
+[[routes]]
+pattern = "nl.hercules-merchandising.fr/*"
+zone_name = "hercules-merchandising.fr"

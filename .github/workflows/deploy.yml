@@ -1,0 +1,213 @@
+name: Deploy to Cloudflare Pages
+
+# NL: identical to FR's workflow except that a push to `main` deploys the STAGING lane
+# (edge router on nl.hercules-merchandising.fr + hercules-nl-staging.pages.dev), so every
+# staging change is a commit too. A push to `production` deploys the LIVE lane
+# (hercules-merchandise.nl - no zone yet, so it stays on workers.dev/pages.dev until then).
+
+on:
+  push:
+    branches:
+      - main
+      - production
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for manual deploy'
+        required: false
+        default: 'Manual trigger'
+      target:
+        description: 'Deploy target'
+        required: false
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      deployments: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Determine deploy target
+      # push to production branch → production
+      # push to main branch → staging
+      # workflow_dispatch with target=production → production
+      # workflow_dispatch with target=staging (default) → staging
+      - name: Set deploy target
+        id: target
+        run: |
+          if [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref_name }}" = "production" ]; then
+            echo "env=production" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            echo "env=staging" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event.inputs.target }}" = "production" ]; then
+            # Guard: only the production branch may deploy to production.
+            # Prevents stale-branch dispatches from overwriting the live site.
+            if [ "${{ github.ref_name }}" = "production" ]; then
+              echo "env=production" >> $GITHUB_OUTPUT
+            else
+              echo "Refusing production deploy from ref '${{ github.ref_name }}' — falling back to staging"
+              echo "env=staging" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "env=staging" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build Astro site (staging)
+        if: steps.target.outputs.env == 'staging'
+        run: npm run build
+        env:
+          WC_CONSUMER_KEY: ${{ secrets.WC_CONSUMER_KEY }}
+          WC_CONSUMER_SECRET: ${{ secrets.WC_CONSUMER_SECRET }}
+          WORKER_URL: https://hercules-product-sync-nl.gilles-86d.workers.dev
+          # PUBLIC_ prefix is required: Astro's default envPrefix is 'PUBLIC_', so a bare
+          # IS_STAGING never reaches import.meta.env in BaseLayout.astro.
+          PUBLIC_IS_STAGING: 'true'
+
+      - name: Build Astro site (production)
+        if: steps.target.outputs.env == 'production'
+        run: npm run build
+        env:
+          WC_CONSUMER_KEY: ${{ secrets.WC_CONSUMER_KEY_PROD }}
+          WC_CONSUMER_SECRET: ${{ secrets.WC_CONSUMER_SECRET_PROD }}
+          WORKER_URL: https://hercules-product-sync-nl-prod.gilles-86d.workers.dev
+          PUBLIC_IS_STAGING: 'false'
+
+      # Fail closed before anything ships. The staging artifact must be unindexable on
+      # EVERY host that can serve it, including the raw hercules-nl-staging.pages.dev
+      # alias, which never passes through the edge router and so gets none of the
+      # hostname-based noindex. The inverse gate stops a staging noindex from ever
+      # reaching the live site: both targets build from the same source tree.
+      - name: Verify artifact indexability
+        run: |
+          set -u
+          target='${{ steps.target.outputs.env }}'
+          total=$(find dist -name '*.html' | wc -l | tr -d ' ')
+          if [ "$total" -eq 0 ]; then
+            echo "::error::dist/ contains no HTML — refusing to deploy"
+            exit 1
+          fi
+          echo "Scanning $total HTML file(s) for target '$target'"
+
+          if [ "$target" = 'staging' ]; then
+            missing=$(grep -rLF '<meta name="robots" content="noindex' --include='*.html' dist || true)
+            if [ -n "$missing" ]; then
+              echo "::error::staging artifact has indexable pages — PUBLIC_IS_STAGING is not reaching the build"
+              echo "$missing" | head -20
+              exit 1
+            fi
+            echo "OK: all $total staging page(s) are noindex"
+          else
+            for p in dist/index.html dist/products/voetbalshirt-bedrukken/index.html; do
+              if [ ! -f "$p" ]; then
+                echo "::error::expected production page missing from artifact: $p"
+                exit 1
+              fi
+              if ! grep -qF 'content="index, follow' "$p"; then
+                echo "::error::production page is not indexable — a staging noindex reached the production build: $p"
+                grep -oE '<meta name="robots"[^>]*>' "$p" || true
+                exit 1
+              fi
+            done
+            if grep -qxF 'Disallow: /' dist/robots.txt; then
+              echo "::error::production robots.txt carries a site-wide 'Disallow: /'"
+              exit 1
+            fi
+            echo "OK: production artifact is indexable"
+          fi
+
+      # Separation guard (NL rule): a build must never reach a live DE/FR/UK host or worker
+      # at runtime. Plain links in copy are fine; a fetch/XHR/form target is not.
+      - name: Verify no live-site runtime targets in the artifact
+        run: |
+          set -u
+          hits=$(grep -rEo 'https?://(hercules-(product-sync|edge-router|form-handler)-(fr|de|uk)(-prod|-production)?\.[a-z0-9-]+\.workers\.dev|(www\.)?hercules-merchandising\.fr/wp-json|(www\.)?hercules-merchandise\.(de|co\.uk)/wp-json)' --include='*.html' --include='*.js' dist | sort -u || true)
+          if [ -n "$hits" ]; then
+            echo "::error::artifact references a live DE/FR/UK worker or WordPress API"
+            echo "$hits" | head -40
+            exit 1
+          fi
+          echo "OK: no live-site runtime targets in dist/"
+
+      - name: Deploy Product Sync Worker (staging)
+        if: steps.target.outputs.env == 'staging'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy --config workers/product-sync/wrangler.toml
+
+      - name: Deploy Edge Router (staging)
+        if: steps.target.outputs.env == 'staging'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy --config workers/edge-router/wrangler.toml
+
+      - name: Deploy to Staging
+        if: steps.target.outputs.env == 'staging'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist/ --project-name=hercules-nl-staging --branch=main
+
+      - name: Deploy Product Sync Worker (production)
+        if: steps.target.outputs.env == 'production'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy --config workers/product-sync/wrangler.prod.toml
+
+      - name: Deploy Edge Router (production)
+        if: steps.target.outputs.env == 'production'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy --config workers/edge-router/wrangler.prod.toml
+
+      - name: Deploy to Production
+        if: steps.target.outputs.env == 'production'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist/ --project-name=hercules-nl --branch=production
+
+      - name: Output deployment URL
+        run: |
+          if [ "${{ steps.target.outputs.env }}" = "production" ]; then
+            echo "Deployed to https://hercules-nl.pages.dev (production)"
+          else
+            echo "Deployed to https://nl.hercules-merchandising.fr (staging, via the NL edge router) and https://hercules-nl-staging.pages.dev"
+          fi
+
+      - name: Trigger post-deploy health check
+        if: success() && steps.target.outputs.env == 'production'
+        run: |
+          curl -s -X POST \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: Bearer ${{ secrets.HEALTH_CHECK_TOKEN }}" \
+            https://api.github.com/repos/royboy31/hercules-health-check/dispatches \
+            -d '{"event_type":"deploy-nl"}' || true

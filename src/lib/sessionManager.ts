@@ -65,6 +65,7 @@ class SessionManager {
 
     if (
       hostname.includes('hercules-edge-router') ||
+      hostname === 'nl.hercules-merchandising.fr' || // temporary host, fronted by the NL edge router
       hostname.includes('hercules-merchandise.nl') ||
       hostname === 'localhost'
     ) {

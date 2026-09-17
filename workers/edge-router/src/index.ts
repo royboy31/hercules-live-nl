@@ -200,8 +200,8 @@ export default {
     const url = new URL(request.url);
     const { pathname, search } = url;
 
-    // Staging: block all search engine indexing
-    if (url.hostname.startsWith('staging.')) {
+    // Staging (and the temporary nl. host, which IS the NL staging lane): block all search engine indexing
+    if (url.hostname.startsWith('staging.') || url.hostname === 'nl.hercules-merchandising.fr') {
       if (pathname === '/robots.txt') {
         return new Response('User-Agent: *\nDisallow: /\n', {
           headers: { 'Content-Type': 'text/plain' },
