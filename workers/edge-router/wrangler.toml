@@ -7,9 +7,10 @@
 name = "hercules-edge-router-nl"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
-# workers.dev -> workers.dev fetches inside one account are refused (error 1042) unless they go
-# out as public requests. Harmless on the custom-domain route.
-compatibility_flags = ["global_fetch_strictly_public"]
+# NO "global_fetch_strictly_public" here (FR has none either). It was needed while this lane
+# lived on workers.dev only, but on a zone route it makes the fetch to WORDPRESS_ORIGIN (our own
+# hostname) re-enter this Worker instead of going to the origin -> every WP path 503
+# "compute server error" (seen 2026-09-17). Same-zone fetches skip the route by default.
 
 [vars]
 ASTRO_ORIGIN = "https://hercules-nl-staging.pages.dev"
