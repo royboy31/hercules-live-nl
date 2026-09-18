@@ -163,6 +163,20 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy --config workers/edge-router/wrangler.toml
 
+      # Skipped until the BREVO_API_KEY repo secret exists, so a missing key can never
+      # deploy the worker with an empty secret (Brevo would then 401 on every send).
+      - name: Deploy Form Handler Worker (staging)
+        if: steps.target.outputs.env == 'staging' && secrets.BREVO_API_KEY != ''
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy --config workers/form-handler/wrangler.toml
+          secrets: |
+            BREVO_API_KEY
+        env:
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+
       - name: Deploy to Staging
         if: steps.target.outputs.env == 'staging'
         uses: cloudflare/wrangler-action@v3

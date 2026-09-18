@@ -320,8 +320,9 @@ async function uploadFilesToR2(
 // EMAIL TEMPLATES (Matching WordPress Pearl Plugin Style)
 // ============================================================================
 
-const SITE_URL = 'https://hercules-merchandising.fr';
-const LOGO_URL = 'https://hercules-merchandising.fr/wp-content/plugins/pearl-wc-steps-variation/includes/mail_templates/img/logo.png';
+// Staging host until hercules-merchandise.nl goes live.
+const SITE_URL = 'https://staging.hercules-merchandise.nl';
+const LOGO_URL = `${SITE_URL}/wp-content/plugins/pearl-wc-steps-variation/includes/mail_templates/img/logo.png`;
 
 function escapeHtml(text: string): string {
   if (!text) return '';
@@ -338,13 +339,13 @@ function getEmailHeader(): string {
     <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%; margin:0 0 10px 0;">
       <tr>
         <td style="width:50%; padding:20px 0;">
-          <img src="${LOGO_URL}" alt="Hercules Merchandising" style="max-width:180px; display:block;">
+          <img src="${LOGO_URL}" alt="Hercules Merchandise" style="max-width:180px; display:block;">
         </td>
         <td style="width:50%; text-align:right; padding:20px 0; font-size:14px; color:#444;">
           <span style="display:inline-block; margin-right:8px;">📧</span>
-          <a href="mailto:info@hercules-merchandising.fr" style="color:#253461; text-decoration:none;">info@hercules-merchandising.fr</a><br>
+          <a href="mailto:info@hercules-merchandise.nl" style="color:#253461; text-decoration:none;">info@hercules-merchandise.nl</a><br>
           <span style="display:inline-block; margin-right:8px;">☎</span>
-          <a href="tel:+33973030295" style="color:#253461; text-decoration:none;">09 73 03 02 95</a>
+          <a href="tel:+31857736667" style="color:#253461; text-decoration:none;">+31 85 773 6667</a>
         </td>
       </tr>
     </table>
@@ -354,16 +355,16 @@ function getEmailHeader(): string {
 function getEmailFooter(): string {
   return `
     <div style="background:#f5f5f5; font-size:13px; color:#777; text-align:center; padding:20px 40px; line-height:1.6; margin-top:30px;">
-      <p>Si vous avez des questions, répondez simplement à cet e-mail ou <a href="${SITE_URL}/contactez-nous/" style="color:#253461; text-decoration:none;">contactez-nous ici</a>.</p>
+      <p>Hebt u vragen? Antwoord gewoon op deze e-mail of <a href="${SITE_URL}/contact/" style="color:#253461; text-decoration:none;">neem hier contact met ons op</a>.</p>
       <div style="margin-top:0; font-size:12px; text-align:center; color:#999;">
         <p>
-          <a href="${SITE_URL}" style="color:#253461; text-decoration:none;"><strong>Hercules Merchandising</strong></a>
+          <a href="${SITE_URL}" style="color:#253461; text-decoration:none;"><strong>Hercules Merchandise</strong></a>
           <strong style="color:#000;"> | </strong>
-          <a href="${SITE_URL}/conditions-generales-dutilisation/" style="color:#253461; text-decoration:none;"><strong>Conditions générales</strong></a>
+          <a href="${SITE_URL}/algemene-voorwaarden/" style="color:#253461; text-decoration:none;"><strong>Algemene voorwaarden</strong></a>
           <strong style="color:#000;"> | </strong>
-          <a href="${SITE_URL}/mon-compte/" style="color:#253461; text-decoration:none;"><strong>Mon compte</strong></a><br>
-          📧 <a href="mailto:info@hercules-merchandising.fr" style="color:#253461; text-decoration:none;">info@hercules-merchandising.fr</a><br>
-          ☎ <a href="tel:+33973030295" style="color:#253461; text-decoration:none;">09 73 03 02 95</a><br>
+          <a href="${SITE_URL}/mijn-account/" style="color:#253461; text-decoration:none;"><strong>Mijn account</strong></a><br>
+          📧 <a href="mailto:info@hercules-merchandise.nl" style="color:#253461; text-decoration:none;">info@hercules-merchandise.nl</a><br>
+          ☎ <a href="tel:+31857736667" style="color:#253461; text-decoration:none;">+31 85 773 6667</a><br>
           🌐 <a href="${SITE_URL}" style="color:#253461; text-decoration:none;">${SITE_URL}</a>
         </p>
       </div>
@@ -393,14 +394,14 @@ function getContactFormEmailHtml(data: {
     });
     filesHtml = `
       <tr>
-        <td style="padding:6px 8px; border-bottom:1px solid #ccc;"><strong>Fichiers joints :</strong></td>
+        <td style="padding:6px 8px; border-bottom:1px solid #ccc;"><strong>Bijlagen:</strong></td>
         <td style="padding:6px 8px; border-bottom:1px solid #ccc;">${fileLinks.join('<br>')}</td>
       </tr>
     `;
   } else if (data.files) {
     filesHtml = `
       <tr>
-        <td style="padding:6px 8px; border-bottom:1px solid #ccc;"><strong>Fichiers joints :</strong></td>
+        <td style="padding:6px 8px; border-bottom:1px solid #ccc;"><strong>Bijlagen:</strong></td>
         <td style="padding:6px 8px; border-bottom:1px solid #ccc;">${escapeHtml(data.files)}</td>
       </tr>
     `;
@@ -411,7 +412,7 @@ function getContactFormEmailHtml(data: {
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Demande de contact - Hercules Merchandising</title>
+  <title>Contactaanvraag - Hercules Merchandise</title>
   <style>
     body { margin:0; padding:0; background:#ffffff; color:#000; font-family:Arial,sans-serif; font-size:13px; }
     .container { max-width:700px; margin:0 auto; padding:20px 16px; }
@@ -424,42 +425,42 @@ function getContactFormEmailHtml(data: {
   <div class="container">
     ${getEmailHeader()}
 
-    <p>Bonjour <strong>${escapeHtml(data.name)}</strong>,</p>
-    <p>Merci pour votre demande de contact chez <strong>Hercules Merchandising</strong>. Nous avons bien reçu le message suivant :</p>
+    <p>Hallo <strong>${escapeHtml(data.name)}</strong>,</p>
+    <p>Bedankt voor uw contactaanvraag bij <strong>Hercules Merchandise</strong>. We hebben het volgende bericht goed ontvangen:</p>
 
     <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%; margin:0 0 20px 0;">
       <tr>
-        <td style="padding:6px 8px; border-bottom:1px solid #ccc;"><strong>Nom :</strong></td>
+        <td style="padding:6px 8px; border-bottom:1px solid #ccc;"><strong>Naam:</strong></td>
         <td style="padding:6px 8px; border-bottom:1px solid #ccc;">${escapeHtml(data.name)}</td>
       </tr>
       <tr>
-        <td style="padding:6px 8px; border-bottom:1px solid #ccc;"><strong>E-mail :</strong></td>
+        <td style="padding:6px 8px; border-bottom:1px solid #ccc;"><strong>E-mail:</strong></td>
         <td style="padding:6px 8px; border-bottom:1px solid #ccc;">${escapeHtml(data.email)}</td>
       </tr>
       ${data.phone ? `
       <tr>
-        <td style="padding:6px 8px; border-bottom:1px solid #ccc;"><strong>Téléphone :</strong></td>
+        <td style="padding:6px 8px; border-bottom:1px solid #ccc;"><strong>Telefoon:</strong></td>
         <td style="padding:6px 8px; border-bottom:1px solid #ccc;">${escapeHtml(data.phone)}</td>
       </tr>
       ` : ''}
       ${data.message ? `
       <tr>
-        <td style="padding:6px 8px; border-bottom:1px solid #ccc; vertical-align:top;"><strong>Message :</strong></td>
+        <td style="padding:6px 8px; border-bottom:1px solid #ccc; vertical-align:top;"><strong>Bericht:</strong></td>
         <td style="padding:6px 8px; border-bottom:1px solid #ccc;">${escapeHtml(data.message).replace(/\n/g, '<br>')}</td>
       </tr>
       ` : ''}
       ${filesHtml}
       <tr>
-        <td style="padding:6px 8px; border-bottom:1px solid #ccc;"><strong>Page :</strong></td>
+        <td style="padding:6px 8px; border-bottom:1px solid #ccc;"><strong>Pagina:</strong></td>
         <td style="padding:6px 8px; border-bottom:1px solid #ccc;"><a href="${escapeHtml(data.pageUrl)}">${escapeHtml(data.pageTitle)}</a></td>
       </tr>
       <tr>
-        <td style="padding:6px 8px; border-bottom:1px solid #ccc;"><strong>Date/Heure :</strong></td>
-        <td style="padding:6px 8px; border-bottom:1px solid #ccc;">${escapeHtml(data.date)} à ${escapeHtml(data.time)}</td>
+        <td style="padding:6px 8px; border-bottom:1px solid #ccc;"><strong>Datum/tijd:</strong></td>
+        <td style="padding:6px 8px; border-bottom:1px solid #ccc;">${escapeHtml(data.date)} om ${escapeHtml(data.time)}</td>
       </tr>
     </table>
 
-    <p>Nous vous répondrons dans les plus brefs délais.</p>
+    <p>We nemen zo snel mogelijk contact met u op.</p>
 
     ${getEmailFooter()}
   </div>
@@ -490,7 +491,7 @@ function getQuantityRequestEmailHtml(data: {
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Demande de devis - Hercules Merchandising</title>
+  <title>Offerteaanvraag - Hercules Merchandise</title>
   <style>
     body { margin:0; padding:0; background:#ffffff; color:#000; font-family:Arial,sans-serif; font-size:13px; }
     .container { max-width:700px; margin:0 auto; padding:20px 16px; }
@@ -505,22 +506,22 @@ function getQuantityRequestEmailHtml(data: {
   <div class="container">
     ${getEmailHeader()}
 
-    <p>Bonjour <strong>${escapeHtml(data.name)}</strong>,</p>
-    <p>Merci pour votre demande de devis chez <strong>Hercules Merchandising</strong>.</p>
+    <p>Hallo <strong>${escapeHtml(data.name)}</strong>,</p>
+    <p>Bedankt voor uw offerteaanvraag bij <strong>Hercules Merchandise</strong>.</p>
 
     <!-- Customer Details -->
     <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%; margin:0 0 20px 0;">
       <tr>
-        <td style="padding:6px 8px; border-bottom:1px solid #ccc;"><strong>Nom :</strong></td>
+        <td style="padding:6px 8px; border-bottom:1px solid #ccc;"><strong>Naam:</strong></td>
         <td style="padding:6px 8px; border-bottom:1px solid #ccc;">${escapeHtml(data.name)}</td>
       </tr>
       <tr>
-        <td style="padding:6px 8px; border-bottom:1px solid #ccc;"><strong>E-mail :</strong></td>
+        <td style="padding:6px 8px; border-bottom:1px solid #ccc;"><strong>E-mail:</strong></td>
         <td style="padding:6px 8px; border-bottom:1px solid #ccc;">${escapeHtml(data.email)}</td>
       </tr>
       ${data.phone ? `
       <tr>
-        <td style="padding:6px 8px; border-bottom:1px solid #ccc;"><strong>Téléphone :</strong></td>
+        <td style="padding:6px 8px; border-bottom:1px solid #ccc;"><strong>Telefoon:</strong></td>
         <td style="padding:6px 8px; border-bottom:1px solid #ccc;">${escapeHtml(data.phone)}</td>
       </tr>
       ` : ''}
@@ -535,25 +536,25 @@ function getQuantityRequestEmailHtml(data: {
           <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;">
             ${data.attributes ? `
             <tr>
-              <td style="padding:4px 6px; border-bottom:1px solid #ccc;">Options sélectionnées</td>
+              <td style="padding:4px 6px; border-bottom:1px solid #ccc;">Gekozen opties</td>
               <td style="padding:4px 6px; border-bottom:1px solid #ccc; text-align:right;">${escapeHtml(data.attributes)}</td>
             </tr>
             ` : ''}
             ${data.addons ? `
             <tr>
-              <td style="padding:4px 6px; border-bottom:1px solid #ccc;">Options supplémentaires</td>
+              <td style="padding:4px 6px; border-bottom:1px solid #ccc;">Extra opties</td>
               <td style="padding:4px 6px; border-bottom:1px solid #ccc; text-align:right;">${escapeHtml(data.addons).replace(/\n/g, '<br>')}</td>
             </tr>
             ` : ''}
             ${data.formType === 'expressdelivery' || data.formType === 'express_delivery' ? `
             <tr>
-              <td style="padding:4px 6px; border-bottom:1px solid #ccc;">Quantité</td>
+              <td style="padding:4px 6px; border-bottom:1px solid #ccc;">Aantal</td>
               <td style="padding:4px 6px; border-bottom:1px solid #ccc; text-align:right;">${escapeHtml(data.quantity)}</td>
             </tr>
             ` : ''}
             ${data.desiredDate ? `
             <tr>
-              <td style="padding:4px 6px; border-bottom:1px solid #ccc;">Date de livraison souhaitée</td>
+              <td style="padding:4px 6px; border-bottom:1px solid #ccc;">Gewenste leverdatum</td>
               <td style="padding:4px 6px; border-bottom:1px solid #ccc; text-align:right;">${(() => { const m = data.desiredDate.match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? `${m[3]}-${m[2]}-${m[1].slice(2)}` : escapeHtml(data.desiredDate); })()}</td>
             </tr>
             ` : ''}
@@ -567,7 +568,7 @@ function getQuantityRequestEmailHtml(data: {
     ${data.message ? `
     <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%; margin:15px 0;">
       <tr>
-        <td style="padding:6px 8px; border-bottom:1px solid #ccc; vertical-align:top;"><strong>Message supplémentaire :</strong></td>
+        <td style="padding:6px 8px; border-bottom:1px solid #ccc; vertical-align:top;"><strong>Extra bericht:</strong></td>
         <td style="padding:6px 8px; border-bottom:1px solid #ccc;">${escapeHtml(data.message).replace(/\n/g, '<br>')}</td>
       </tr>
     </table>
@@ -575,12 +576,12 @@ function getQuantityRequestEmailHtml(data: {
 
     <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%; margin:15px 0;">
       <tr>
-        <td style="padding:6px 8px; border-bottom:1px solid #ccc;"><strong>Lien produit :</strong></td>
+        <td style="padding:6px 8px; border-bottom:1px solid #ccc;"><strong>Productlink:</strong></td>
         <td style="padding:6px 8px; border-bottom:1px solid #ccc;"><a href="${escapeHtml(data.pageUrl)}">${escapeHtml(data.pageUrl)}</a></td>
       </tr>
       <tr>
-        <td style="padding:6px 8px;"><strong>Date/Heure :</strong></td>
-        <td style="padding:6px 8px;">${escapeHtml(data.date)} à ${escapeHtml(data.time)}</td>
+        <td style="padding:6px 8px;"><strong>Datum/tijd:</strong></td>
+        <td style="padding:6px 8px;">${escapeHtml(data.date)} om ${escapeHtml(data.time)}</td>
       </tr>
     </table>
 
@@ -588,7 +589,7 @@ function getQuantityRequestEmailHtml(data: {
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:20px;">
       <tr>
         <td style="text-align:right;">
-          <a class="btn btn-green" href="${SITE_URL}/contactez-nous/" style="margin-left:10px;">Nous contacter</a>
+          <a class="btn btn-green" href="${SITE_URL}/contact/" style="margin-left:10px;">Contact</a>
         </td>
       </tr>
     </table>
@@ -596,7 +597,7 @@ function getQuantityRequestEmailHtml(data: {
     <br>
     <p style="text-align:center; color:#253461; margin:0;">
       Nous vous enverrons un devis dans les plus brefs délais.<br>
-      Les conditions générales de vente d'Hercules Merchandising s'appliquent.
+      Les conditions générales de vente d'Hercules Merchandise s'appliquent.
     </p>
 
     ${getEmailFooter()}
@@ -617,7 +618,7 @@ function getNewsletterNotificationEmailHtml(data: {
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Nouvel abonnement à la newsletter - Hercules Merchandising</title>
+  <title>Nieuwe nieuwsbriefinschrijving - Hercules Merchandise</title>
   <style>
     body { margin:0; padding:0; background:#ffffff; color:#000; font-family:Arial,sans-serif; font-size:13px; }
     .container { max-width:700px; margin:0 auto; padding:20px 16px; }
@@ -628,8 +629,8 @@ function getNewsletterNotificationEmailHtml(data: {
   <div class="container">
     ${getEmailHeader()}
 
-    <h2 style="color:#10C99E; margin:20px 0 10px;">Nouvel abonnement à la newsletter</h2>
-    <p>Une nouvelle personne s'est abonnée à la newsletter :</p>
+    <h2 style="color:#10C99E; margin:20px 0 10px;">Nieuwe nieuwsbriefinschrijving</h2>
+    <p>Iemand heeft zich ingeschreven voor de nieuwsbrief:</p>
 
     <div style="background:#E0F9F3; padding:20px; border-radius:10px; text-align:center; margin:20px 0;">
       <div style="font-size:18px; font-weight:bold; color:#253461;">${escapeHtml(data.email)}</div>
@@ -637,11 +638,11 @@ function getNewsletterNotificationEmailHtml(data: {
 
     <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%; margin:20px 0;">
       <tr>
-        <td style="padding:6px 8px; border-bottom:1px solid #ccc;"><strong>Date :</strong></td>
-        <td style="padding:6px 8px; border-bottom:1px solid #ccc;">${escapeHtml(data.date)} à ${escapeHtml(data.time)}</td>
+        <td style="padding:6px 8px; border-bottom:1px solid #ccc;"><strong>Datum:</strong></td>
+        <td style="padding:6px 8px; border-bottom:1px solid #ccc;">${escapeHtml(data.date)} om ${escapeHtml(data.time)}</td>
       </tr>
       <tr>
-        <td style="padding:6px 8px;"><strong>Source :</strong></td>
+        <td style="padding:6px 8px;"><strong>Bron:</strong></td>
         <td style="padding:6px 8px;">${escapeHtml(data.source)}</td>
       </tr>
     </table>
@@ -914,7 +915,7 @@ async function handleContactForm(request: Request, env: Env): Promise<Response> 
 
         if (formType === 'quantity' || formType === 'quantity_request' || contactData.productName) {
           // Quantity request / Product inquiry
-          subject = `Demande de devis : ${contactData.productName || 'Produit'}`;
+          subject = `Offerteaanvraag: ${contactData.productName || 'Product'}`;
           htmlContent = getQuantityRequestEmailHtml({
             name: contactData.name,
             email: contactData.email,
@@ -934,7 +935,7 @@ async function handleContactForm(request: Request, env: Env): Promise<Response> 
           });
         } else {
           // General contact form (with file URLs)
-          subject = `Demande de contact de ${contactData.name}`;
+          subject = `Contactaanvraag van ${contactData.name}`;
           htmlContent = getContactFormEmailHtml({
             name: contactData.name,
             email: contactData.email,
@@ -974,18 +975,16 @@ async function handleContactForm(request: Request, env: Env): Promise<Response> 
         if (formType === 'expressdelivery' || formType === 'express_delivery') {
           // Express delivery: TO admin, CC info, Reply-To customer
           emailParams = {
-            to: [{ email: env.COMPANY_EMAIL, name: 'Hercules Merchandising' }],
-            cc: [{ email: 'info@hercules-merchandise.com', name: 'Hercules Merchandise' }],
+            to: [{ email: env.COMPANY_EMAIL, name: 'Hercules Merchandise' }],
             replyTo: { email: contactData.email, name: contactData.name },
-            subject: `Demande urgente de devis - ${contactData.productName || 'Express'}`,
+            subject: `Dringende offerteaanvraag - ${contactData.productName || 'Express'}`,
             htmlContent,
             attachment: brevoAttachments.length > 0 ? brevoAttachments : undefined,
           };
         } else if (formType === 'quantity' || formType === 'quantity_request' || contactData.productName) {
           // Quantity request: TO admin, CC info, Reply-To customer
           emailParams = {
-            to: [{ email: env.COMPANY_EMAIL, name: 'Hercules Merchandising' }],
-            cc: [{ email: 'info@hercules-merchandise.com', name: 'Hercules Merchandise' }],
+            to: [{ email: env.COMPANY_EMAIL, name: 'Hercules Merchandise' }],
             replyTo: { email: contactData.email, name: contactData.name },
             subject,
             htmlContent,
@@ -994,7 +993,7 @@ async function handleContactForm(request: Request, env: Env): Promise<Response> 
         } else {
           // General contact form: TO admin, CC customer, Reply-To customer
           emailParams = {
-            to: [{ email: env.COMPANY_EMAIL, name: 'Hercules Merchandising' }],
+            to: [{ email: env.COMPANY_EMAIL, name: 'Hercules Merchandise' }],
             cc: [{ email: contactData.email, name: contactData.name }],
             replyTo: { email: contactData.email, name: contactData.name },
             subject,
@@ -1083,9 +1082,9 @@ async function handleNewsletter(request: Request, env: Env): Promise<Response> {
         const htmlContent = getNewsletterNotificationEmailHtml({ email, date, time, source });
 
         const emailResult = await sendEmail(env, {
-          to: [{ email: env.COMPANY_EMAIL, name: 'Hercules Merchandising' }],
+          to: [{ email: env.COMPANY_EMAIL, name: 'Hercules Merchandise' }],
           replyTo: { email },
-          subject: `Nouvel abonnement newsletter : ${email}`,
+          subject: `Nieuwe nieuwsbriefinschrijving: ${email}`,
           htmlContent,
         });
 

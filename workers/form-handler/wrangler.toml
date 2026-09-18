@@ -9,10 +9,13 @@ compatibility_date = "2024-01-01"
 # Sender must be a Brevo-verified address on the NL domain (Phase 0, Gilles)
 SENDER_EMAIL = "info@hercules-merchandise.nl"
 SENDER_NAME = "Hercules Merchandise"
-COMPANY_EMAIL = "info@hercules-merchandise.nl"
+# TEMPORARY 2026-09-18 (user request): form notifications go to Kamindu while the NL site
+# is being tested. Restore "info@hercules-merchandise.nl" before go-live.
+COMPANY_EMAIL = "kamindudushmantha@gmail.com"
 R2_PUBLIC_URL = "https://pub-3dae2eda626f4ab4a403388bd2068fac.r2.dev"   # hercules-nl-form-uploads
 PRODUCT_SYNC_URL = "https://hercules-product-sync-nl.gilles-86d.workers.dev"
-# Secrets: BREVO_API_KEY, GOOGLE_APPS_SCRIPT_URL, WEBHOOK_SECRET via `wrangler secret put`
+# Secrets: BREVO_API_KEY (set by the deploy workflow from the repo secret of the same name),
+# GOOGLE_APPS_SCRIPT_URL, WEBHOOK_SECRET.
 
 # [[routes]]
 # pattern = "staging.hercules-merchandise.nl/api/*"
