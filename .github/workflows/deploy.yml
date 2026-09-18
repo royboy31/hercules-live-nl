@@ -163,10 +163,17 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy --config workers/edge-router/wrangler.toml
 
+      # The secrets context is not allowed in a step "if", so the presence of the key is
+      # turned into an output first.
+      - name: Check Brevo key
+        id: brevo
+        if: steps.target.outputs.env == 'staging'
+        run: echo "present=${{ secrets.BREVO_API_KEY != '' }}" >> "$GITHUB_OUTPUT"
+
       # Skipped until the BREVO_API_KEY repo secret exists, so a missing key can never
       # deploy the worker with an empty secret (Brevo would then 401 on every send).
       - name: Deploy Form Handler Worker (staging)
-        if: steps.target.outputs.env == 'staging' && secrets.BREVO_API_KEY != ''
+        if: steps.target.outputs.env == 'staging' && steps.brevo.outputs.present == 'true'
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
