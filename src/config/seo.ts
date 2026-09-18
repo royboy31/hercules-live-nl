@@ -1,4 +1,4 @@
-// SEO Configuration for Hercules Merchandising FR
+// SEO Configuration for Hercules Merchandise NL
 // Based on Rank Math settings export
 
 export const siteConfig = {
@@ -15,9 +15,9 @@ export const siteConfig = {
     name: 'Hercules Merchandise',
     legalName: 'Be Ventures SRL',
     type: 'Organization',
-    email: 'info@hercules-merchandising.fr',
-    phone: '+33 9 73 03 02 95',
-    // Legal entity: Be Ventures SRL (Belgian company operating FR site)
+    email: 'info@hercules-merchandise.nl',
+    phone: '+31 85 773 6667',
+    // Legal entity: Be Ventures SRL (Belgian company; registered seat in Jette, BE)
     address: {
       streetAddress: 'Avenue Paul de Merten 32/12',
       postalCode: '1090',

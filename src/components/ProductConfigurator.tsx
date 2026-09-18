@@ -281,7 +281,7 @@ export default function ProductConfigurator({ productSlug, workerUrl = 'https://
         const host = window.location.hostname;
         const wpBase = host.includes('hercules-edge-router') || host.includes('hercules-merchandise.nl') || host === 'localhost'
           ? ''
-          : 'https://nl.hercules-merchandising.fr';
+          : 'https://staging.hercules-merchandise.nl';
         const url = `${wpBase}/wp-json/hercules/v1/product-config-by-slug/${productSlug}`;
         console.log('[ProductConfigurator] URL:', url);
 
