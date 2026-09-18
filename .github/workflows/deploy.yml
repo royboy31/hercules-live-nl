@@ -178,7 +178,10 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy --config workers/form-handler/wrangler.toml
+          # wrangler-action runs "secret bulk" without --config, so the worker name can
+          # only be found by running inside the worker's own directory.
+          workingDirectory: workers/form-handler
+          command: deploy
           secrets: |
             BREVO_API_KEY
         env:
