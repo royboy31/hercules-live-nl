@@ -13,11 +13,11 @@ export const siteConfig = {
   // Organization/Business Info
   organization: {
     name: 'Hercules Merchandise',
-    legalName: 'Be Ventures SRL',
+    legalName: 'Be Ventures BV',
     type: 'Organization',
     email: 'info@hercules-merchandise.nl',
     phone: '+31 85 773 6667',
-    // Legal entity: Be Ventures SRL (Belgian company; registered seat in Jette, BE)
+    // Legal entity: Be Ventures BV (Belgian company; registered seat in Jette, BE)
     address: {
       streetAddress: 'Avenue Paul de Merten 32/12',
       postalCode: '1090',
