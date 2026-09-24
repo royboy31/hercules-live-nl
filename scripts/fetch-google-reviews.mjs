@@ -5,7 +5,7 @@
  * and the header badge always match what visitors see in the widget.
  *
  * Feed id comes from data-rich-snippet="..." in the TrustIndex widget markup
- * (widget 4fe205b569ba69155006b1f0ba2).
+ * (NL widget b323efb8230e1805d266c7ef231, Google profile "Hercules Merchandise NL").
  *
  * Outputs to src/data/google-place-data.json for build-time consumption.
  *
@@ -19,16 +19,16 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUTPUT_FILE = resolve(__dirname, '../src/data/google-place-data.json');
 
-// TrustIndex company id for hercules-merchandising.fr
-const TRUSTINDEX_COMPANY_ID = 'ebd868362929ge5f';
+// TrustIndex company id for hercules-merchandise.nl (data-rich-snippet of widget b323efb8230e1805d266c7ef231)
+const TRUSTINDEX_COMPANY_ID = 'da9a1d539521gb33';
 const TRUSTINDEX_FEED = `https://cdn.trustindex.io/companies/${TRUSTINDEX_COMPANY_ID.slice(0, 2)}/${TRUSTINDEX_COMPANY_ID}/richsnippet.json`;
 
-const PLACE_NAME = 'Hercules Merchandising FR';
-const MAPS_URL = 'https://www.google.com/maps/place//data=!4m7!3m6!1s0x21d159209e369b9d:0xa126617f91835893!8m2!3d30.886403!4d-49.4022062!9m1!1b1';
+const PLACE_NAME = 'Hercules Merchandise NL';
+const MAPS_URL = 'https://www.google.com/maps/place/Hercules+Merchandise+NL/data=!4m2!3m1!1s0x8565f6c310e115b1:0xe2cb88b822f6b3c4';
 
 // Last known good values, only used if the feed is unreachable and the
 // previous google-place-data.json cannot be read.
-const FALLBACK = { rating: 4.9, reviewCount: 276 };
+const FALLBACK = { rating: 4.9, reviewCount: 17 };
 
 function readPrevious() {
   try {
@@ -42,7 +42,7 @@ async function fetchTrustIndexRating() {
   console.log(`[GoogleReviews] Fetching TrustIndex feed ${TRUSTINDEX_FEED}`);
 
   const response = await fetch(TRUSTINDEX_FEED, {
-    headers: { 'User-Agent': 'hercules-merchandising.fr build script' }
+    headers: { 'User-Agent': 'hercules-merchandise.nl build script' }
   });
 
   if (!response.ok) {

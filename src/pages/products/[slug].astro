@@ -981,7 +981,7 @@ const ga4Item = product ? {
             <h2 class="reviews-heading">
               Wat <span class="highlight">onze klanten</span> zeggen
             </h2>
-            <!-- TrustIndex Widget - Same widget ID as WordPress, logo replaced with Google -->
+            <!-- TrustIndex Widget - NL widget (same as the home page), logo replaced with Google -->
             <div class="reviews-widget" id="trustindex-widget-product"></div>
           </div>
         </section>
@@ -3090,11 +3090,11 @@ const ga4Item = product ? {
   // Load TrustIndex widget only when visible, after React hydration completes
   const trustIndexContainer = document.getElementById('trustindex-widget-product');
   if (trustIndexContainer) {
-    const CORRECT_MAPS_URL = 'https://www.google.com/maps/place/Hercules+Merchandising+France/@30.886403,-49.4022061,3z/data=!3m1!4b1!4m8!3m7!1s0x21d159209e369b9d:0xa126617f91835893!8m2!3d30.886403!4d-49.4022062!9m1!1b1!16s%2Fg%2F11vkhhwqmm?entry=ttu&g_ep=EgoyMDI2MDIxOC4wIKXMDSoASAFQAw%3D%3D';
+    const CORRECT_MAPS_URL = 'https://www.google.com/maps/place/Hercules+Merchandise+NL/data=!4m2!3m1!1s0x8565f6c310e115b1:0xe2cb88b822f6b3c4';
 
     const loadTrustWidget = () => {
       const script = document.createElement('script');
-      script.src = 'https://cdn.trustindex.io/loader.js?4fe205b569ba69155006b1f0ba2';
+      script.src = 'https://cdn.trustindex.io/loader.js?b323efb8230e1805d266c7ef231';
       script.defer = true;
       script.async = true;
       trustIndexContainer.appendChild(script);

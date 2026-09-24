@@ -1,46 +1,52 @@
 {
   "rating": 4.9,
-  "reviewCount": 276,
-  "name": "Hercules Merchandising FR",
-  "url": "https://www.google.com/maps/place//data=!4m7!3m6!1s0x21d159209e369b9d:0xa126617f91835893!8m2!3d30.886403!4d-49.4022062!9m1!1b1",
-  "scrapedAt": "2026-08-22T15:40:48.186Z",
-  "source": "trustindex-richsnippet",
+  "reviewCount": 17,
+  "name": "Hercules Merchandise NL",
+  "url": "https://www.google.com/maps/place/Hercules+Merchandise+NL/data=!4m2!3m1!1s0x8565f6c310e115b1:0xe2cb88b822f6b3c4",
+  "scrapedAt": "2026-09-24T11:40:00.000Z",
+  "source": "previous-build",
   "reviews": [
     {
-      "author": "James Wilson",
+      "author": "Trijnie Kooi-Snip",
       "rating": 5,
-      "text": "Excellent quality and fast delivery! The fan scarves turned out perfect. Highly recommended!",
-      "time": "2 weeks ago"
+      "text": "Super snel geleverd! Klasse service.",
+      "time": "4 maanden geleden"
     },
     {
-      "author": "Sarah Thompson",
+      "author": "Alexander Vanden Bussche",
       "rating": 5,
-      "text": "Great service and wonderful advice. The jerseys for our team are fantastic. Will definitely order again!",
-      "time": "1 month ago"
+      "text": "Kwaliteit en een snelle service. Top!",
+      "time": "1 jaar geleden"
     },
     {
-      "author": "David Brown",
+      "author": "Gijs",
       "rating": 5,
-      "text": "Professional handling from start to finish. The quality of the merchandise impressed us greatly.",
-      "time": "1 month ago"
+      "text": "Goede kwaliteit eindproduct en vriendelijk in de omgang! Ook werd er fijn meegedacht bij de ontwerpfase, en was het product na de uiteindelijke goedkeuring snel en netjes geleverd.",
+      "time": "1 jaar geleden"
     },
     {
-      "author": "Emma Clarke",
+      "author": "Anne Wierema",
       "rating": 5,
-      "text": "Quick communication and fair prices. The personalised beanies are a hit with our fans!",
-      "time": "2 months ago"
+      "text": "Hele goede klantenservice. Denken fijn mee met opties en zijn erg flexibel. Doen er zeker alles aan om je bestelling zo goed en soepel mogelijk te maken. Top service!!",
+      "time": "1 jaar geleden"
     },
     {
-      "author": "Mark Taylor",
+      "author": "Sanne ten Hoven",
       "rating": 5,
-      "text": "First-class work! The design team perfectly brought our vision to life. Very satisfied!",
-      "time": "2 months ago"
+      "text": "Top kwaliteit!",
+      "time": "1 jaar geleden"
     },
     {
-      "author": "Rachel Davies",
+      "author": "Job Edens",
       "rating": 5,
-      "text": "Great products, fair prices and super friendly customer service. Can only recommend!",
-      "time": "3 months ago"
+      "text": "Geweldige sjaals ontvangen! Ontzettend blij mee. Zullen zeker nog een bestelling plaatsen eerdaags!",
+      "time": "1 jaar geleden"
+    },
+    {
+      "author": "Bram Plaatje",
+      "rating": 5,
+      "text": "Kwaliteit van de sjaals was top en duidelijke communicatie. Erg goede service!",
+      "time": "1 jaar geleden"
     }
   ]
 }

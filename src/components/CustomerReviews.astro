@@ -1,6 +1,6 @@
 ---
 // Ce que les clients disent de nous - Customer Reviews Section
-// Uses TrustIndex widget for Google Reviews (FR widget ID from hercules-merchandising.fr)
+// Uses TrustIndex widget for Google Reviews (NL widget, Google profile "Hercules Merchandise NL")
 // TrustIndex logo replaced with Google logo via JS
 // Script loaded dynamically after React hydration to avoid hydration mismatch (error #418)
 ---
@@ -11,7 +11,7 @@
       Wat klanten <span class="highlight">over ons zeggen</span>
     </h2>
 
-    <!-- TrustIndex Widget - FR widget ID from hercules-merchandising.fr -->
+    <!-- TrustIndex Widget - NL widget (hercules-merchandise.nl, Slider I light border) -->
     <div class="reviews-widget" id="trustindex-widget-home"></div>
   </div>
 </section>
@@ -79,7 +79,7 @@
     if (!container) return;
     var section = container.closest('.reviews-section');
 
-    var CORRECT_MAPS_URL = 'https://www.google.com/maps/place/Hercules+Merchandising+France/@30.886403,-49.4022061,3z/data=!3m1!4b1!4m8!3m7!1s0x21d159209e369b9d:0xa126617f91835893!8m2!3d30.886403!4d-49.4022062!9m1!1b1!16s%2Fg%2F11vkhhwqmm?entry=ttu&g_ep=EgoyMDI2MDIxOC4wIKXMDSoASAFQAw%3D%3D';
+    var CORRECT_MAPS_URL = 'https://www.google.com/maps/place/Hercules+Merchandise+NL/data=!4m2!3m1!1s0x8565f6c310e115b1:0xe2cb88b822f6b3c4';
 
     function fixReviewLinks(root) {
       var links = root.querySelectorAll('a[href*="admin.trustindex.io"]');
@@ -96,7 +96,7 @@
 
     function loadWidget() {
       var script = document.createElement('script');
-      script.src = 'https://cdn.trustindex.io/loader.js?4fe205b569ba69155006b1f0ba2';
+      script.src = 'https://cdn.trustindex.io/loader.js?b323efb8230e1805d266c7ef231';
       script.defer = true;
       script.async = true;
       container.appendChild(script);
