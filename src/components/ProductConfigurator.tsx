@@ -1397,6 +1397,11 @@ export default function ProductConfigurator({ productSlug, workerUrl = 'https://
                     Neem voor dit aantal contact met ons op, dan maken wij een offerte op maat voor u.
                   </p>
                 )}
+                {tempQuantity < quantityRange.min && (
+                  <p className="kd-qty-warning">
+                    Het minimumaantal voor dit product is {quantityRange.min} stuks.
+                  </p>
+                )}
               </div>
             </div>
           )}
