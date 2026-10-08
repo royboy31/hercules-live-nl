@@ -7,7 +7,9 @@ compatibility_date = "2024-01-01"
 [vars]
 # Until go-live the production lane also reads the NL build origin; switch to
 # https://hercules-merchandise.nl when the zone is live (Phase 7).
-WC_STORE_URL = "https://nl.hercules-merchandising.fr"
+# 2026-10-08: was https://nl.hercules-merchandising.fr, which 301s here anyway — that
+# sent every production sync through the FR zone for no reason. Same WordPress, direct.
+WC_STORE_URL = "https://staging.hercules-merchandise.nl"
 WORKER_BASE_URL = "https://hercules-product-sync-nl-prod.gilles-86d.workers.dev"
 # WEBHOOK_SECRET is a secret: `wrangler secret put WEBHOOK_SECRET -c wrangler.prod.toml`
 GITHUB_OWNER = "royboy31"

@@ -1851,9 +1851,11 @@ async function triggerSiteRebuild(env: Env): Promise<{ triggered: boolean; reaso
     }
 
     // Trigger GitHub Actions workflow via workflow_dispatch
+    // NL resources only: never fall back to another region's repo. Both NL tomls set
+    // GITHUB_OWNER/GITHUB_REPO, so this default is only a backstop if one is dropped.
     const ghRepo = env.GITHUB_OWNER && env.GITHUB_REPO
       ? `${env.GITHUB_OWNER}/${env.GITHUB_REPO}`
-      : 'royboy31/royboy31-hercules-live-fr';
+      : 'royboy31/hercules-live-nl';
     const ghWorkflow = env.GITHUB_WORKFLOW || 'deploy.yml';
     const ghRef = env.GITHUB_REF || 'main';
     const workflowUrl = `https://api.github.com/repos/${ghRepo}/actions/workflows/${ghWorkflow}/dispatches`;
@@ -2457,7 +2459,7 @@ export default {
         return new Response('Unauthorized', { status: 401 });
       }
 
-      const testUrl = url.searchParams.get('url') || 'https://hercules-merchandising.fr/wp-content/uploads/2025/08/Hercules-Merchandise-Jacquard-Woven-Towel-1-300x300.webp';
+      const testUrl = url.searchParams.get('url') || 'https://staging.hercules-merchandise.nl/wp-content/uploads/2025/08/Hercules-Merchandise-Jacquard-Woven-Towel-1-300x300.webp';
       const testSync = url.searchParams.get('sync') === 'true';
 
       try {
