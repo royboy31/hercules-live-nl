@@ -1,18 +1,32 @@
 # Hercules NL — edge router, PRODUCTION lane.
-# No [[routes]] yet: the hercules-merchandise.nl zone does not exist. Routes go on the
-# .nl zone ONLY — never on hercules-merchandising.fr or any other live zone.
+# Routes go on the hercules-merchandise.nl zone ONLY — never on hercules-merchandising.fr
+# or any other live zone.
 name = "hercules-edge-router-nl-prod"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
 # NO "global_fetch_strictly_public": on a zone route it makes the self-fetch re-enter the Worker
-# (every WP path 503, seen on the staging lane 2026-09-17). Without a route this lane's WP
-# paths do not work from workers.dev - the frontend is the routed staging host.
+# (every WP path 503, seen on the staging lane 2026-09-17).
 
 [vars]
 ASTRO_ORIGIN = "https://hercules-nl.pages.dev"
 WORDPRESS_ORIGIN = "https://hercules-merchandise.nl"
 PRODUCT_SYNC_WORKER_URL = "https://hercules-product-sync-nl-prod.gilles-86d.workers.dev"
+# Required once the routes below are live, for the same reason as on the staging lane: resolve
+# the WordPress origin straight to the Plesk IP through the grey-clouded `origin` record, so
+# Cloudflare never re-enters this route and never APO-caches WordPress HTML. Without it
+# WORDPRESS_ORIGIN is this Worker's own routed hostname and every WordPress path 503s.
+# The Host header stays hercules-merchandise.nl; WordPress lives in that vhost's httpdocs and
+# answers on it (verified against the origin IP 2026-10-09).
+ORIGIN_RESOLVE_HOST = "origin.hercules-merchandise.nl"
 
-# [[routes]]
-# pattern = "hercules-merchandise.nl/*"
-# zone_name = "hercules-merchandise.nl"
+# Both records are grey-clouded on Shopify until cutover, so neither route matches yet:
+# adding them now means the flip to orange is the only remaining step.
+[[routes]]
+pattern = "hercules-merchandise.nl/*"
+zone_name = "hercules-merchandise.nl"
+
+# www is routed only so the Worker can 301 it to the apex (see src/index.ts). Shopify
+# canonicalises to www today, so this is where the existing index arrives.
+[[routes]]
+pattern = "www.hercules-merchandise.nl/*"
+zone_name = "hercules-merchandise.nl"

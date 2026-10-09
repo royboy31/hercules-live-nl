@@ -254,6 +254,15 @@ export default {
       return Response.redirect(`https://staging.hercules-merchandise.nl${pathname}${search}`, 301);
     }
 
+    // www -> apex, one 301, path and query untouched. The Shopify store canonicalises to
+    // www, so that is the form Google has indexed and the form old links carry, but this
+    // site is built for the bare apex: its sitemap and every canonical tag say
+    // hercules-merchandise.nl, and FR, DE and UK all run there too. The rules below then
+    // run against the apex, so a legacy Shopify path costs one extra hop and no more.
+    if (url.hostname === 'www.hercules-merchandise.nl') {
+      return Response.redirect(`https://hercules-merchandise.nl${pathname}${search}`, 301);
+    }
+
     // Staging: block all search engine indexing
     if (url.hostname.startsWith('staging.')) {
       if (pathname === '/robots.txt') {
