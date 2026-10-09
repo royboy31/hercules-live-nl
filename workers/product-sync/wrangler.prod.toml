@@ -17,7 +17,8 @@ GITHUB_REPO = "hercules-live-nl"
 GITHUB_WORKFLOW = "deploy.yml"
 GITHUB_REF = "production"
 ASTRO_SITE_URL = "https://hercules-merchandise.nl"
-# CLOUDFLARE_ZONE_ID: set once the hercules-merchandise.nl zone exists (Phase 1, Gilles)
+# Zone hercules-merchandise.nl, used to purge the edge cache when a product is deleted.
+CLOUDFLARE_ZONE_ID = "d23bf10adf8a01956ee3d2b5faadf025"
 
 [[r2_buckets]]
 binding = "CLIENT_LOGOS_BUCKET"
