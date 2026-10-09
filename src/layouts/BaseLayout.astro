@@ -98,10 +98,17 @@ if (shouldNoindex && nofollow) {
 // until 2026-08-27). Set only on the staging build step in deploy.yml.
 if (import.meta.env.PUBLIC_IS_STAGING === 'true') robotsMeta = robotsConfig.none;
 
-// Staging builds carry no tracking and no live chat: the GTM container, Ads and Clarity ids
-// and the ChatHive workspace still belong to the live FR site, so a staging visit would land
-// in FR's analytics and a staging chat in FR's inbox.
-const loadTracking = import.meta.env.PUBLIC_IS_STAGING !== 'true';
+// No tracking and no live chat on ANY lane until NL has its own ids: the GTM container, Ads
+// and Clarity ids and the ChatHive workspace in this file still belong to the live FR site,
+// so a visit would land in FR's analytics and a chat in FR's French inbox.
+//
+// This used to test PUBLIC_IS_STAGING alone, which protected staging only — the first
+// production build (2026-10-09) duly shipped GTM-N7NM77N, AW-10841250326, Clarity
+// pc87sb9mdj and ChatHive T5u5… live on the NL artifact. Opting in now takes a deliberate
+// PUBLIC_ENABLE_TRACKING=true on the production build step in deploy.yml, and must not be
+// set before the four FR ids below are replaced with NL's.
+const loadTracking = import.meta.env.PUBLIC_IS_STAGING !== 'true'
+  && import.meta.env.PUBLIC_ENABLE_TRACKING === 'true';
 
 // Build hreflang URLs - use provided custom URLs or get from mapping
 let hreflangs: Record<Locale, string>;
