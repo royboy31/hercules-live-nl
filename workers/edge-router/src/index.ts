@@ -119,13 +119,53 @@ const PAGE_REDIRECTS: Record<string, string> = {
   '/moyens-de-paiement': '/betaalmethoden/',
   '/livraisons-et-retours': '/levering-en-retour/',
   '/pages/livraisons-et-retours': '/levering-en-retour/',
-  // Shopify NL store
+  // Shopify NL store. Everything below was verified against the live storefront on
+  // 2026-10-09: its sitemap (77 URLs), a link crawl, and the Wayback CDX index for URLs
+  // Google may still hold after a page was deleted. 58 of 59 product handles, all 6
+  // collection handles and 1 of 5 article handles carried over unchanged, so only the
+  // exceptions are listed here - the rest resolve on their own.
   '/pages/contact': '/contact/',
   '/pages/over-ons': '/over-ons/',
   '/pages/betaalmogelijkheden': '/betaalmethoden/',
   '/blogs/mutsen': '/blogs/news/',
   '/collections/all': '/winkel/',
+  '/collections': '/winkel/',
+  '/search': '/winkel/',
   '/products/sporttas-1': '/products/sporttas-op-maat/',
+
+  // The five Shopify policy pages. All answered 200 and none is disallowed in the store's
+  // robots.txt, so all five are crawlable and have to land somewhere. Dutch h1s read
+  // Wettelijke kennisgeving / Privacybeleid / Verzendbeleid / Algemene voorwaarden /
+  // Terugbetalingsbeleid; shipping and refund both belong to one page here.
+  '/policies/legal-notice': '/juridische-informatie/',
+  '/policies/privacy-policy': '/privacy-en-cookiebeleid/',
+  '/policies/shipping-policy': '/levering-en-retour/',
+  '/policies/terms-of-service': '/algemene-voorwaarden/',
+  '/policies/refund-policy': '/levering-en-retour/',
+  '/policies': '/juridische-informatie/',
+
+  // The four Shopify articles with no Dutch counterpart, matched on what each one argues
+  // rather than on its handle. The last two are commercial-intent posts ("how to get a
+  // scarf printed", "scarf with your logo for the trade fair") and the closest thing we
+  // publish is the product page they were written to sell, not another article.
+  '/blogs/news/eigen-sjaal-ontwerpen-gebruik-deze-5-tips': '/blogs/news/een-gebreide-sjaal-ontwerpen-wat-u-moet-weten/',
+  '/blogs/news/gepersonaliseerde-sjaals-om-je-eigen-club-te-promoten': '/blogs/news/hoe-kom-ik-aan-sjaals-op-maat-voor-mijn-voetbalclub/',
+  '/blogs/news/sjaal-laten-bedrukken-zo-werkt-het': '/collections/sjaals-bedrukken/',
+  '/blogs/news/sjaal-met-eigen-logo-voor-de-beurs': '/products/bedrukte-business-sjaals/',
+
+  // Products Shopify dropped before the migration: they are in the Wayback index but 404 on
+  // the live store today, so most have aged out of the index already. Cheap to catch anyway.
+  '/products/bedrukte-douchegel': '/collections/geschenken/',
+  '/products/deluxe-vaan': '/products/groot-vaantje-op-maat/',
+  '/products/geweven-vaantjes': '/collections/vaantjes-bedrukken/',
+  '/products/mini-sjaals': '/collections/sjaals-bedrukken/',
+  '/products/sjaals-met-muts-en-zakken': '/collections/sjaals-bedrukken/',
+
+  // Shopify customer endpoints. robots.txt disallows them so they should not be indexed,
+  // but they are linked from old order e-mails.
+  '/account': '/mijn-account/',
+  '/account/login': '/mijn-account/',
+  '/account/register': '/mijn-account/',
 };
 
 // Obsolete Shopify-era / product-recommendation / attribute params that only spawn duplicate
@@ -148,7 +188,15 @@ const STRIP_PARAMS = new Set([
 ]);
 
 function shouldStripParam(key: string): boolean {
-  return STRIP_PARAMS.has(key) || key.startsWith('attribute_pa_');
+  // filter.* and sort_by are Shopify's collection faceting. Its own robots.txt disallows the
+  // multi-filter and sort_by forms, so they carry no ranking to preserve, and nothing here
+  // reads them - left on they would just mint duplicate URLs for every collection.
+  return (
+    STRIP_PARAMS.has(key) ||
+    key.startsWith('attribute_pa_') ||
+    key.startsWith('filter.') ||
+    key === 'sort_by'
+  );
 }
 
 // A last segment with a file extension means an asset, whose query is load-bearing
@@ -219,6 +267,29 @@ export default {
     const redirectTarget = PAGE_REDIRECTS[pathname.replace(/\/+$/, '') || '/'];
     if (redirectTarget) {
       return Response.redirect(new URL(redirectTarget + search, url.origin).toString(), 301);
+    }
+
+    // Shopify Atom feeds: /blogs/news.atom, /blogs/mutsen.atom, /collections/<handle>.atom.
+    // Nothing here speaks Atom, so send each one to its own HTML page rather than to a
+    // generic 404 - and run the result back through PAGE_REDIRECTS, because /blogs/mutsen
+    // is itself a redirect (that blog no longer exists).
+    if (pathname.endsWith('.atom')) {
+      const base = pathname.slice(0, -'.atom'.length);
+      const mapped = PAGE_REDIRECTS[base] || `${base}/`;
+      return Response.redirect(new URL(mapped + search, url.origin).toString(), 301);
+    }
+
+    // Shopify also served every product under /collections/<handle>/products/<slug>. The
+    // live store 301s those to the canonical /products/<slug> itself, so Google should be
+    // holding the short form - but a crawler that learned the long one from an old page
+    // would otherwise land on a 404, and the Worker is the only thing that still sees it.
+    const nestedProduct = pathname.match(/^\/collections\/[^/]+\/products\/([^/]+)\/?$/);
+    if (nestedProduct) {
+      const handle = nestedProduct[1];
+      const target =
+        PAGE_REDIRECTS[`/products/${handle}`] ||
+        (PRODUCT_SLUG_REDIRECTS[handle] ? `/products/${PRODUCT_SLUG_REDIRECTS[handle]}/` : `/products/${handle}/`);
+      return Response.redirect(new URL(target + search, url.origin).toString(), 301);
     }
 
     // French product/collection slugs (see slug-redirects.ts) -> the Dutch slug
