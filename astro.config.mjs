@@ -52,6 +52,16 @@ try {
   console.warn('Sitemap lastmod: failed to fetch dates, using build date as fallback', e);
 }
 
+// The newest date across every product, category and post. Used for the pages that have no
+// date of their own but list content that does, so they still move when the catalogue moves.
+const newestContentDate = [...lastmodMap.values()].reduce(
+  (newest, d) => (!newest || Date.parse(d) > Date.parse(newest) ? d : newest),
+  /** @type {string | undefined} */ (undefined)
+);
+
+// Index pages: no date of their own, but they change when their content does.
+const CONTENT_INDEX_PATHS = new Set(['/', '/winkel/', '/blogs/news/']);
+
 // Hercules NL Configuration
 // https://astro.build/config
 export default defineConfig({
@@ -121,25 +131,32 @@ export default defineConfig({
       // Custom serialization for sitemap entries
       serialize: (item) => {
         const path = new URL(item.url).pathname;
-        const lastmod = lastmodMap.get(path) || buildDate;
+
+        // NEVER fall back to the build date. It used to, which gave the homepage and the nine
+        // static pages a new lastmod on every deploy even when nothing about them had changed —
+        // Google learns to distrust the whole sitemap's lastmod when that happens. A page with
+        // no real date is better off with no lastmod at all.
+        const lastmod = lastmodMap.get(path)
+          || (CONTENT_INDEX_PATHS.has(path) ? newestContentDate : undefined);
+        const entry = lastmod ? { ...item, lastmod } : { ...item };
 
         // Higher priority for homepage
         if (item.url === 'https://hercules-merchandise.nl/') {
-          return { ...item, lastmod, changefreq: 'daily', priority: 1.0 };
+          return { ...entry, changefreq: 'daily', priority: 1.0 };
         }
         // Higher priority for product pages
         if (item.url.includes('/products/')) {
-          return { ...item, lastmod, changefreq: 'weekly', priority: 0.9 };
+          return { ...entry, changefreq: 'weekly', priority: 0.9 };
         }
         // Higher priority for category pages
         if (item.url.includes('/collections/')) {
-          return { ...item, lastmod, changefreq: 'weekly', priority: 0.8 };
+          return { ...entry, changefreq: 'weekly', priority: 0.8 };
         }
         // Higher priority for blog posts
         if (item.url.includes('/blogs/') && item.url !== 'https://hercules-merchandise.nl/blogs/') {
-          return { ...item, lastmod, changefreq: 'monthly', priority: 0.6 };
+          return { ...entry, changefreq: 'monthly', priority: 0.6 };
         }
-        return { ...item, lastmod };
+        return entry;
       },
       // i18n support - Dutch (Belgium)
       i18n: {

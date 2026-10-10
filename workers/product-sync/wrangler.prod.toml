@@ -5,11 +5,16 @@ main = "src/index.ts"
 compatibility_date = "2024-01-01"
 
 [vars]
-# Until go-live the production lane also reads the NL build origin; switch to
-# https://hercules-merchandise.nl when the zone is live (Phase 7).
-# 2026-10-08: was https://nl.hercules-merchandising.fr, which 301s here anyway — that
-# sent every production sync through the FR zone for no reason. Same WordPress, direct.
-WC_STORE_URL = "https://staging.hercules-merchandise.nl"
+# 2026-10-10: was https://staging.hercules-merchandise.nl. That is the same WordPress today,
+# so nothing was broken by it — but the name is a trap: the post-launch plan rebuilds a real
+# staging site on that hostname, and the day that happens the PRODUCTION catalogue would
+# silently start syncing from staging data. The apex is what the Phase 7 note always intended.
+# Checked before switching: /wp-json is in the edge router's NO_CACHE_PATHS so nothing is
+# cached, the router's JSON URL-rewriting is a no-op here (wpHost == our host), and an
+# authenticated wc/v3/products call returns 200 on the apex. It costs ~0.4s per request more
+# than the direct host because it passes through the router. origin.hercules-merchandise.nl
+# is NOT an option: its Plesk certificate is expired, so a Worker fetch fails TLS.
+WC_STORE_URL = "https://hercules-merchandise.nl"
 WORKER_BASE_URL = "https://hercules-product-sync-nl-prod.gilles-86d.workers.dev"
 # WEBHOOK_SECRET is a secret: `wrangler secret put WEBHOOK_SECRET -c wrangler.prod.toml`
 GITHUB_OWNER = "royboy31"
