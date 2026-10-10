@@ -1,6 +1,7 @@
-# Hercules NL — form handler, STAGING lane.
-# No [[routes]] yet: the hercules-merchandise.nl zone does not exist. Routes go on the
-# .nl zone ONLY — never on a live zone.
+# Hercules NL — form handler, STAGING lane. The production lane is a config of its own in
+# ../form-handler-prod/, sharing this src/; see the note there before moving either back.
+# No [[routes]]: the Pages Function at functions/api/* calls this worker by its
+# workers.dev hostname. Routes go on the .nl zone ONLY — never on a live zone.
 name = "hercules-form-handler-nl"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"

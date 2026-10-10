@@ -167,7 +167,6 @@ jobs:
       # turned into an output first.
       - name: Check Brevo key
         id: brevo
-        if: steps.target.outputs.env == 'staging'
         run: echo "present=${{ secrets.BREVO_API_KEY != '' }}" >> "$GITHUB_OUTPUT"
 
       # Skipped until the BREVO_API_KEY repo secret exists, so a missing key can never
@@ -210,6 +209,24 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy --config workers/edge-router/wrangler.prod.toml
+
+      # Production counterpart of the staging step above; without it the production worker
+      # was never deployed and never got its Brevo key. Ordered BEFORE the Pages deploy on
+      # purpose: the production Functions start posting here the moment they ship, and a
+      # worker without BREVO_API_KEY accepts the submission, returns success, sends no mail.
+      # workingDirectory is the prod-only config dir — see the note in its wrangler.toml.
+      - name: Deploy Form Handler Worker (production)
+        if: steps.target.outputs.env == 'production' && steps.brevo.outputs.present == 'true'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: workers/form-handler-prod
+          command: deploy
+          secrets: |
+            BREVO_API_KEY
+        env:
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
 
       - name: Deploy to Production
         if: steps.target.outputs.env == 'production'

@@ -1,9 +1,7 @@
 // Cloudflare Pages Function - Proxies to Form Handler Worker
 // Handles contact form submissions including file uploads to R2
 
-interface Env {
-  FORM_HANDLER_URL?: string;
-}
+import { formHandlerUrl } from '../lib/form-handler';
 
 interface FileData {
   name: string;
@@ -12,7 +10,6 @@ interface FileData {
   data: string; // base64 encoded
 }
 
-const FORM_HANDLER_URL = 'https://hercules-form-handler-nl.gilles-86d.workers.dev';
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB max per file
 const MAX_TOTAL_SIZE = 25 * 1024 * 1024; // 25MB max total
 
@@ -32,7 +29,7 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   return btoa(binary);
 }
 
-export const onRequestPost: PagesFunction<Env> = async (context) => {
+export const onRequestPost: PagesFunction = async (context) => {
   const { request } = context;
 
   try {
@@ -106,7 +103,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     }
 
     // Forward to Form Handler Worker
-    const response = await fetch(`${FORM_HANDLER_URL}/contact`, {
+    const response = await fetch(`${formHandlerUrl(request)}/contact`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

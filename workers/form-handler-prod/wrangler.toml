@@ -1,0 +1,27 @@
+# Hercules NL — form handler, PRODUCTION lane.
+# Routes go on the .nl zone ONLY — never on a live zone. None are needed today: the
+# Pages Function at functions/api/* calls this worker by its workers.dev hostname.
+#
+# This lane lives in its own directory, and the source stays in ../form-handler/, because
+# cloudflare/wrangler-action runs "secret bulk" WITHOUT --config: it reads whatever
+# wrangler.toml sits in the step's workingDirectory. While both configs shared one
+# directory, the only config that command could ever find was the staging one, so a
+# production secret would land on the staging worker and the step would still go green.
+# One config per directory makes that impossible. Keep it that way.
+name = "hercules-form-handler-nl-prod"
+main = "../form-handler/src/index.ts"
+compatibility_date = "2024-01-01"
+
+[vars]
+SENDER_EMAIL = "info@hercules-merchandise.nl"
+SENDER_NAME = "Hercules Merchandise"
+COMPANY_EMAIL = "info@hercules-merchandise.nl"
+R2_PUBLIC_URL = "https://pub-b4e56da9f586435bbd738df31c8379a9.r2.dev"   # hercules-nl-form-uploads-prod
+PRODUCT_SYNC_URL = "https://hercules-product-sync-nl-prod.gilles-86d.workers.dev"
+# Secrets: BREVO_API_KEY is set by the deploy workflow from the repo secret of the same
+# name. GOOGLE_APPS_SCRIPT_URL and WEBHOOK_SECRET are unset on both lanes — the worker
+# skips the Google Sheets log when the first is missing.
+
+[[r2_buckets]]
+binding = "FORM_UPLOADS"
+bucket_name = "hercules-nl-form-uploads-prod"

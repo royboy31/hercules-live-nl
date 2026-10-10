@@ -1,10 +1,7 @@
 // Cloudflare Pages Function - Proxies to Form Handler Worker
 
-interface Env {
-  FORM_HANDLER_URL?: string;
-}
+import { formHandlerUrl } from '../lib/form-handler';
 
-const FORM_HANDLER_URL = 'https://hercules-form-handler-nl.gilles-86d.workers.dev';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,7 +9,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 
-export const onRequestPost: PagesFunction<Env> = async (context) => {
+export const onRequestPost: PagesFunction = async (context) => {
   const { request } = context;
 
   try {
@@ -22,7 +19,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     const source = request.headers.get('Referer') || 'Unknown';
 
     // Forward to Form Handler Worker
-    const response = await fetch(`${FORM_HANDLER_URL}/newsletter`, {
+    const response = await fetch(`${formHandlerUrl(request)}/newsletter`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

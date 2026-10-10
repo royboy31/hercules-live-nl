@@ -25,7 +25,7 @@ import ProductSearch from '../components/ProductSearch';
 
     <!-- Product Search -->
     <div class="search-wrapper">
-      <ProductSearch client:idle />
+      <ProductSearch client:idle apiUrl={import.meta.env.WORKER_URL} />
     </div>
   </section>
 </BaseLayout>

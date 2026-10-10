@@ -19,7 +19,10 @@ interface ProductSearchProps {
 
 export default function ProductSearch({
   placeholder = 'Producten zoeken...',
-  apiUrl = 'https://hercules-product-sync-nl.gilles-86d.workers.dev'
+  // Backstop only — every caller should pass import.meta.env.WORKER_URL, which the build
+  // sets per lane. The default is the production worker so a caller that forgets cannot
+  // search the staging catalogue from the live site.
+  apiUrl = 'https://hercules-product-sync-nl-prod.gilles-86d.workers.dev'
 }: ProductSearchProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
