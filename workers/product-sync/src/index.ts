@@ -928,7 +928,7 @@ const MAX_GALLERY_IMAGES = 5;
 // Main sync function with batching support
 // forceImageRefresh: if true, re-download all images even if already cached (for upgrading image sizes)
 // modifiedAfter: if set, only fetch products modified after this ISO timestamp (delta sync)
-async function syncAllProducts(env: Env, offset: number = 0, forceImageRefresh: boolean = false, modifiedAfter?: string): Promise<{ synced: number; errors: string[]; hasMore: boolean; nextOffset: number }> {
+async function syncAllProducts(env: Env, offset: number = 0, forceImageRefresh: boolean = false, modifiedAfter?: string, preFetched?: WCProduct[]): Promise<{ synced: number; errors: string[]; hasMore: boolean; nextOffset: number }> {
   const client = new WooCommerceClient(
     env.WC_STORE_URL,
     env.WC_CONSUMER_KEY,
@@ -939,9 +939,18 @@ async function syncAllProducts(env: Env, offset: number = 0, forceImageRefresh: 
   let synced = 0;
 
   try {
-    // Fetch products (all, or only those modified since last sync)
-    console.log(modifiedAfter ? `Fetching products modified after ${modifiedAfter}...` : 'Fetching all products...');
-    const allProducts = await client.fetchAllProducts(modifiedAfter);
+    // Fetch products (all, or only those modified since last sync).
+    // A caller that walks the catalogue batch by batch — the nightly cron — passes the list it
+    // already has: with BATCH_SIZE = 1 this listing was otherwise re-paginated once per product,
+    // which cost ~2 extra subrequests per product and was what made the cron die part-way
+    // through and never write its `last_sync` marker.
+    let allProducts: WCProduct[];
+    if (preFetched) {
+      allProducts = preFetched;
+    } else {
+      console.log(modifiedAfter ? `Fetching products modified after ${modifiedAfter}...` : 'Fetching all products...');
+      allProducts = await client.fetchAllProducts(modifiedAfter);
+    }
     console.log(`Found ${allProducts.length} products${modifiedAfter ? ' (modified)' : ''}, syncing from offset ${offset}`);
 
     // Fetch categories only on first batch
@@ -998,6 +1007,13 @@ async function syncAllProducts(env: Env, offset: number = 0, forceImageRefresh: 
                   const fallback600 = img.src.replace(/(\.[^.]+)$/, '-600x600$1');
                   mainSuccess = await syncImageToKV(env.PRODUCTS_KV, fallback600, product.slug, i, true, 'full');
                 }
+                if (!mainSuccess) {
+                  // Last resort: the original file. Attachments uploaded before kd-main-size
+                  // (361x361) was registered have no square crop in their own extension, so
+                  // every derived URL above 404s and the slot would never cache at all —
+                  // /product-image/<slug>/<i> then answers 404 on a live product page.
+                  mainSuccess = await syncImageToKV(env.PRODUCTS_KV, img.src, product.slug, i, true, 'full');
+                }
               }
 
               // Cache thumbnail (100x100) for thumbnail carousels - ~2-5KB WebP
@@ -1007,6 +1023,12 @@ async function syncAllProducts(env: Env, offset: number = 0, forceImageRefresh: 
                 // Fallback to 83x83 (exact display size) if 100x100 doesn't exist
                 const fallback83 = img.src.replace(/(\.[^.]+)$/, '-83x83$1');
                 thumbSuccess = await syncImageToKV(env.PRODUCTS_KV, fallback83, product.slug, i, true, 'thumb');
+                if (!thumbSuccess) {
+                  // WordPress always writes the 150x150 `thumbnail` crop, in the original's
+                  // own extension, so this catches the same pre-kd-main-size attachments.
+                  const fallback150 = img.src.replace(/(\.[^.]+)$/, '-150x150$1');
+                  thumbSuccess = await syncImageToKV(env.PRODUCTS_KV, fallback150, product.slug, i, true, 'thumb');
+                }
               }
 
               if (mainSuccess || thumbSuccess) {
@@ -3531,15 +3553,20 @@ export default {
     const postResult = await syncAllPosts(env);
     console.log(`Posts synced: ${postResult.synced}, errors: ${postResult.errors.length}`);
 
-    // Sync only products modified since last run (or all products on first run)
+    // Sync only products modified since last run (or all products on first run).
+    // The list is paginated once here and handed to every batch: see the preFetched note in
+    // syncAllProducts.
     console.log('Syncing modified products...');
+    const deltaClient = new WooCommerceClient(env.WC_STORE_URL, env.WC_CONSUMER_KEY, env.WC_CONSUMER_SECRET);
+    const deltaProducts = await deltaClient.fetchAllProducts(lastSyncAt ?? undefined);
+    console.log(`Delta set: ${deltaProducts.length} product(s) to sync`);
     let offset = 0;
     let hasMore = true;
     let totalSynced = 0;
     let consecutiveEmpty = 0;
 
     while (hasMore) {
-      const result = await syncAllProducts(env, offset, false, lastSyncAt ?? undefined);
+      const result = await syncAllProducts(env, offset, false, lastSyncAt ?? undefined, deltaProducts);
       totalSynced += result.synced;
       hasMore = result.hasMore;
       offset = result.nextOffset;
@@ -3562,9 +3589,21 @@ export default {
 
     console.log(`Delta sync complete. Products: ${totalSynced}, Categories: ${categoryResult.synced}, Posts: ${postResult.synced}`);
 
-    // Store the timestamp we started the sync at (not 'now' at end, to avoid missing products
-    // that were modified while the sync was running)
-    await env.PRODUCTS_KV.put('last_delta_sync', syncStartedAt);
+    // Only claim the run as done when every product in the delta set was walked. Stall protection
+    // can end the loop early, and before this the markers moved anyway — which hid a cron that
+    // never got past the product loop while /health kept reporting on a stale `last_sync`.
+    const wholeSetWalked = offset >= deltaProducts.length;
+    if (wholeSetWalked) {
+      // Store the timestamp we started the sync at (not 'now' at end, to avoid missing products
+      // that were modified while the sync was running)
+      await env.PRODUCTS_KV.put('last_delta_sync', syncStartedAt);
+      await env.PRODUCTS_KV.put('last_sync', new Date().toISOString());
+    } else {
+      console.warn(
+        `Delta sync stopped at ${offset}/${deltaProducts.length} products — keeping the previous ` +
+        `delta marker so the next run retries the rest`
+      );
+    }
 
     // Stale image sweep: re-sync products with cached_image_count = 0 or missing synced_at
     // This catches products where the webhook fired but image caching failed silently
