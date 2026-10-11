@@ -147,8 +147,36 @@ jobs:
           fi
           echo "OK: no live-site runtime targets in dist/"
 
+      # The secrets context is not allowed in a step "if", so the presence of the sync
+      # worker's rebuild token is turned into an output first. It is a PAT with "Actions: write" on
+      # this repo, which the worker uses to dispatch THIS workflow when a product changes.
+      # Without it triggerSiteRebuild() returns "No GITHUB_TOKEN configured": a product save
+      # updates KV and the live site is never rebuilt. The repo secret cannot be called
+      # GITHUB_TOKEN - GitHub reserves that prefix - so it is SYNC_GITHUB_TOKEN here and is
+      # handed to the worker under the name the code reads.
+      - name: Check sync rebuild token
+        id: synctoken
+        run: echo "present=${{ secrets.SYNC_GITHUB_TOKEN != '' }}" >> "$GITHUB_OUTPUT"
+
+      # Two variants per lane on purpose. A missing BREVO_API_KEY must stop the form handler
+      # from shipping, but a missing rebuild token only degrades the sync worker, so the
+      # deploy still has to happen without it. wrangler-action runs "secret bulk" without
+      # --config, hence workingDirectory instead of --config in the variant that sets it.
+      - name: Deploy Product Sync Worker (staging, with rebuild token)
+        if: steps.target.outputs.env == 'staging' && steps.synctoken.outputs.present == 'true'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: workers/product-sync
+          command: deploy
+          secrets: |
+            GITHUB_TOKEN
+        env:
+          GITHUB_TOKEN: ${{ secrets.SYNC_GITHUB_TOKEN }}
+
       - name: Deploy Product Sync Worker (staging)
-        if: steps.target.outputs.env == 'staging'
+        if: steps.target.outputs.env == 'staging' && steps.synctoken.outputs.present != 'true'
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -194,13 +222,27 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy dist/ --project-name=hercules-nl-staging --branch=main
 
-      - name: Deploy Product Sync Worker (production)
-        if: steps.target.outputs.env == 'production'
+      - name: Deploy Product Sync Worker (production, with rebuild token)
+        if: steps.target.outputs.env == 'production' && steps.synctoken.outputs.present == 'true'
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy --config workers/product-sync/wrangler.prod.toml
+          workingDirectory: workers/product-sync-prod
+          command: deploy
+          secrets: |
+            GITHUB_TOKEN
+        env:
+          GITHUB_TOKEN: ${{ secrets.SYNC_GITHUB_TOKEN }}
+
+      - name: Deploy Product Sync Worker (production)
+        if: steps.target.outputs.env == 'production' && steps.synctoken.outputs.present != 'true'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: workers/product-sync-prod
+          command: deploy
 
       - name: Deploy Edge Router (production)
         if: steps.target.outputs.env == 'production'

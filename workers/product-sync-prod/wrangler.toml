@@ -1,12 +1,20 @@
-# Hercules NL — product-sync worker, PRODUCTION lane.
+# Hercules NL - product-sync worker, PRODUCTION lane.
 # NL resources only. Never point this at an FR/DE/UK store, KV or repo.
+#
+# This lane lives in its own directory, and the source stays in ../product-sync/, because
+# cloudflare/wrangler-action runs "secret bulk" WITHOUT --config: it reads whatever
+# wrangler.toml sits in the step's workingDirectory. While the two lanes shared one
+# directory, the only config that command could find was the staging one, so a production
+# secret would land on the staging worker and the step would still go green. One config per
+# directory makes that impossible. Same reason as workers/form-handler-prod/. Keep it that way.
+# This replaces the old workers/product-sync/wrangler.prod.toml.
 name = "hercules-product-sync-nl-prod"
-main = "src/index.ts"
+main = "../product-sync/src/index.ts"
 compatibility_date = "2024-01-01"
 
 [vars]
 # 2026-10-10: was https://staging.hercules-merchandise.nl. That is the same WordPress today,
-# so nothing was broken by it — but the name is a trap: the post-launch plan rebuilds a real
+# so nothing was broken by it - but the name is a trap: the post-launch plan rebuilds a real
 # staging site on that hostname, and the day that happens the PRODUCTION catalogue would
 # silently start syncing from staging data. The apex is what the Phase 7 note always intended.
 # Checked before switching: /wp-json is in the edge router's NO_CACHE_PATHS so nothing is
@@ -16,7 +24,11 @@ compatibility_date = "2024-01-01"
 # is NOT an option: its Plesk certificate is expired, so a Worker fetch fails TLS.
 WC_STORE_URL = "https://hercules-merchandise.nl"
 WORKER_BASE_URL = "https://hercules-product-sync-nl-prod.gilles-86d.workers.dev"
-# WEBHOOK_SECRET is a secret: `wrangler secret put WEBHOOK_SECRET -c wrangler.prod.toml`
+# Secrets on this worker: WC_CONSUMER_KEY, WC_CONSUMER_SECRET and WEBHOOK_SECRET were set by
+# hand and survive every deploy. GITHUB_TOKEN is set by the deploy workflow from the repo
+# secret SYNC_GITHUB_TOKEN (the GITHUB_ prefix is reserved for repo secret names, so it
+# cannot be called GITHUB_TOKEN there). Without it triggerSiteRebuild() returns
+# "No GITHUB_TOKEN configured" and a product edit updates KV but never rebuilds the site.
 GITHUB_OWNER = "royboy31"
 GITHUB_REPO = "hercules-live-nl"
 GITHUB_WORKFLOW = "deploy.yml"
