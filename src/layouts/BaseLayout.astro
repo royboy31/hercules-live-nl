@@ -98,17 +98,23 @@ if (shouldNoindex && nofollow) {
 // until 2026-08-27). Set only on the staging build step in deploy.yml.
 if (import.meta.env.PUBLIC_IS_STAGING === 'true') robotsMeta = robotsConfig.none;
 
-// No tracking and no live chat on ANY lane until NL has its own ids: the GTM container, Ads
-// and Clarity ids and the ChatHive workspace in this file still belong to the live FR site,
-// so a visit would land in FR's analytics and a chat in FR's French inbox.
+// Tracking carries NL's own ids since 2026-10-22: GTM container GTM-NFF9PXR — the one the old
+// Shopify shop loaded, recovered from its archived pages — which fires NL's GA4 property
+// G-HNGJ5GXPVJ. The FR Google Ads, Clarity and ChatHive legs were removed rather than ported:
+// the old NL shop had none and NL has no ids of its own for them. Restore a leg from FR's
+// BaseLayout only together with an NL id.
 //
 // This used to test PUBLIC_IS_STAGING alone, which protected staging only — the first
-// production build (2026-10-09) duly shipped GTM-N7NM77N, AW-10841250326, Clarity
-// pc87sb9mdj and ChatHive T5u5… live on the NL artifact. Opting in now takes a deliberate
-// PUBLIC_ENABLE_TRACKING=true on the production build step in deploy.yml, and must not be
-// set before the four FR ids below are replaced with NL's.
+// production build (2026-10-09) duly shipped FR's GTM-N7NM77N, AW-10841250326, Clarity
+// pc87sb9mdj and ChatHive T5u5… live on the NL artifact. Opting in takes a deliberate
+// PUBLIC_ENABLE_TRACKING=true on the production build step in deploy.yml (set 2026-10-22,
+// once the ids below became NL's).
 const loadTracking = import.meta.env.PUBLIC_IS_STAGING !== 'true'
   && import.meta.env.PUBLIC_ENABLE_TRACKING === 'true';
+
+// The chat stays off even with tracking on: the only ChatHive workspace at hand is FR's, and
+// initialising it here would land NL chats in FR's French inbox. Flip only with an NL key.
+const loadChat = false;
 
 // Build hreflang URLs - use provided custom URLs or get from mapping
 let hreflangs: Record<Locale, string>;
@@ -324,7 +330,7 @@ if (jsonLd) {
 <body class="min-h-screen flex flex-col">
   <!-- Google Tag Manager (noscript) - live builds only, see loadTracking -->
   {loadTracking && (
-    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-N7NM77N"
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NFF9PXR"
     height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   )}
 
@@ -345,7 +351,7 @@ if (jsonLd) {
        that loads the ChatHive SDK. The SDK used to load on a 15s timer and then expand
        its iframe by itself, which measured 0.0664 CLS on every page: two thirds of the
        0.10 budget. See RESEARCH/HERCULES_FR_MOBILE_CLS_FIELD_DIAGNOSIS_2026_08_17.md. -->
-  {loadTracking && (
+  {loadChat && (
   <button
     id="chat-widget-launcher"
     type="button"
@@ -381,81 +387,43 @@ if (jsonLd) {
   </script>
 
   <!-- Deferred Analytics & Tracking Scripts — staggered loading after LCP for PageSpeed 90+.
-       Staging builds mark the tag and it exits at once (see loadTracking). -->
+       Staging builds mark the tag and it exits at once (see loadTracking).
+       NL loads only GTM (GTM-NFF9PXR, which fires GA4 G-HNGJ5GXPVJ from inside the
+       container) — the old shop had no Ads, Clarity or ChatHive tags, so FR's extra
+       phases were removed rather than ported (see loadTracking above). -->
   <script is:inline data-no-tracking={loadTracking ? undefined : 'staging'}>
     (function(){
       if (document.currentScript && document.currentScript.dataset.noTracking) return;
-      var phase1=false, phase2=false;
+      var loaded=false;
 
       function inIdle(fn){
         if('requestIdleCallback' in window) requestIdleCallback(fn,{timeout:3000});
         else setTimeout(fn,100);
       }
 
-      // Phase 1: GTM + Google Ads (core tracking) — 5s or user interaction
-      function loadPhase1(){
-        if(phase1) return;
-        phase1=true;
-
-        // 1. Google Tag Manager
+      // Google Tag Manager — 10s or first meaningful user interaction
+      function loadGtm(){
+        if(loaded) return;
+        loaded=true;
         inIdle(function(){
           (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
           new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
           j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-          })(window,document,'script','dataLayer','GTM-N7NM77N');
+          })(window,document,'script','dataLayer','GTM-NFF9PXR');
         });
-
-        // 2. Google Ads Conversion Tracking — staggered 1.5s after GTM
-        setTimeout(function(){
-          inIdle(function(){
-            var gads=document.createElement('script');
-            gads.async=true;
-            gads.src='https://www.googletagmanager.com/gtag/js?id=AW-10841250326';
-            document.head.appendChild(gads);
-            gads.onload=function(){
-              gtag('js', new Date());
-              gtag('config', 'AW-10841250326');
-            };
-          });
-        }, 1500);
-
-        // Trigger Phase 2 after Phase 1 settles
-        setTimeout(loadPhase2, 3000);
       }
 
-      // Phase 2: Clarity (secondary tracking) — 8s or after Phase 1
-      function loadPhase2(){
-        if(phase2) return;
-        phase2=true;
-
-        // 3. ClickCease removed — GTM already injects it (see commit for the trace).
-        //    If it ever leaves the GTM container, re-add a loader here.
-
-        // 4. Microsoft Clarity (proxied) — staggered 1.5s into Phase 2
-        setTimeout(function(){
-          inIdle(function(){
-            (function(c,l,a,r,i,t,y){
-              c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-              t=l.createElement(r);t.async=1;t.src="/cached-scripts/clarity.js";
-              y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-            })(window,document,"clarity","script","pc87sb9mdj");
-          });
-        }, 1500);
-      }
-
-      // Phase 1: Fire after 10s or on first meaningful user interaction
-      var t1=setTimeout(loadPhase1, 10000);
+      var t1=setTimeout(loadGtm, 10000);
       ['click','keydown'].forEach(function(e){
-        window.addEventListener(e, function(){clearTimeout(t1);loadPhase1();}, {once:true,passive:true});
+        window.addEventListener(e, function(){clearTimeout(t1);loadGtm();}, {once:true,passive:true});
       });
-
-      // Phase 2: Fallback timer at 15s (in case Phase 1 was triggered by interaction)
-      setTimeout(loadPhase2, 15000);
     })();
   </script>
 
-  <!-- Chathive AI Chat Widget - loaded on demand, never on a timer (see the launcher above) -->
+  <!-- Chathive AI Chat Widget - loaded on demand, never on a timer (see the launcher above).
+       Gated with the launcher: the apiKey below is FR's, so neither may ship (loadChat). -->
+  {loadChat && (
   <script is:inline>
     (function() {
       var launcher = document.getElementById('chat-widget-launcher');
@@ -485,5 +453,6 @@ if (jsonLd) {
       }, { once: true });
     })();
   </script>
+  )}
 </body>
 </html>
