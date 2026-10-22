@@ -90,6 +90,9 @@ jobs:
           WC_CONSUMER_SECRET: ${{ secrets.WC_CONSUMER_SECRET_PROD }}
           WORKER_URL: https://hercules-product-sync-nl-prod.gilles-86d.workers.dev
           PUBLIC_IS_STAGING: 'false'
+          # Deliberate opt-in (see loadTracking in BaseLayout.astro): set 2026-10-22, once
+          # the FR tracking ids in the layout were replaced with NL's own (GTM-NFF9PXR).
+          PUBLIC_ENABLE_TRACKING: 'true'
 
       # Fail closed before anything ships. The staging artifact must be unindexable on
       # EVERY host that can serve it, including the raw hercules-nl-staging.pages.dev
