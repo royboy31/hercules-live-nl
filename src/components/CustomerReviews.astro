@@ -79,16 +79,20 @@
     if (!container) return;
     var section = container.closest('.reviews-section');
 
-    var CORRECT_MAPS_URL = 'https://www.google.com/maps/place/Hercules+Merchandise+NL/data=!4m2!3m1!1s0x8565f6c310e115b1:0xe2cb88b822f6b3c4';
+    var CORRECT_MAPS_URL = 'https://www.google.com/maps/place/Hercules+Merchandise+NL/data=!4m4!3m3!1s0x8565f6c310e115b1:0xe2cb88b822f6b3c4!9m1!1b1';
 
     function fixReviewLinks(root) {
-      var links = root.querySelectorAll('a[href*="admin.trustindex.io"]');
+      // Two link shapes exist: the older UK/FR TrustIndex domains emit
+      // admin.trustindex.io/api/googleReview, while the NL domain (created 2026-09) emits
+      // www.trustindex.io/reviews/<domain>. Both are TrustIndex pages and both must be
+      // redirected to the Google Maps profile instead.
+      var links = root.querySelectorAll('a[href*="admin.trustindex.io"], a[href*="trustindex.io/reviews/"]');
       links.forEach(function(a) {
         a.href = CORRECT_MAPS_URL;
         a.target = '_blank';
         a.rel = 'noopener noreferrer';
       });
-      var items = root.querySelectorAll('[data-platform-page-url*="admin.trustindex.io"]');
+      var items = root.querySelectorAll('[data-platform-page-url*="admin.trustindex.io"], [data-platform-page-url*="trustindex.io/reviews/"]');
       items.forEach(function(el) {
         el.setAttribute('data-platform-page-url', CORRECT_MAPS_URL);
       });

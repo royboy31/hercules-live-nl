@@ -3090,7 +3090,7 @@ const ga4Item = product ? {
   // Load TrustIndex widget only when visible, after React hydration completes
   const trustIndexContainer = document.getElementById('trustindex-widget-product');
   if (trustIndexContainer) {
-    const CORRECT_MAPS_URL = 'https://www.google.com/maps/place/Hercules+Merchandise+NL/data=!4m2!3m1!1s0x8565f6c310e115b1:0xe2cb88b822f6b3c4';
+    const CORRECT_MAPS_URL = 'https://www.google.com/maps/place/Hercules+Merchandise+NL/data=!4m4!3m3!1s0x8565f6c310e115b1:0xe2cb88b822f6b3c4!9m1!1b1';
 
     const loadTrustWidget = () => {
       const script = document.createElement('script');
@@ -3100,12 +3100,14 @@ const ga4Item = product ? {
       trustIndexContainer.appendChild(script);
 
       const linkObserver = new MutationObserver(() => {
-        trustIndexContainer.querySelectorAll('a[href*="admin.trustindex.io"]').forEach(a => {
+        // See CustomerReviews.astro: NL's TrustIndex domain emits www.trustindex.io/reviews/<domain>
+        // where UK/FR emit admin.trustindex.io/api/googleReview. Rewrite both to Google Maps.
+        trustIndexContainer.querySelectorAll('a[href*="admin.trustindex.io"], a[href*="trustindex.io/reviews/"]').forEach(a => {
           a.href = CORRECT_MAPS_URL;
           a.target = '_blank';
           a.rel = 'noopener noreferrer';
         });
-        trustIndexContainer.querySelectorAll('[data-platform-page-url*="admin.trustindex.io"]').forEach(el => {
+        trustIndexContainer.querySelectorAll('[data-platform-page-url*="admin.trustindex.io"], [data-platform-page-url*="trustindex.io/reviews/"]').forEach(el => {
           el.setAttribute('data-platform-page-url', CORRECT_MAPS_URL);
         });
       });
