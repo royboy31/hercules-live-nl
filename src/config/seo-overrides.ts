@@ -151,13 +151,13 @@ const productSeoOverrides: Record<string, ProductSeoOverride> = {
   },
   'rugby-uitrustingen-op-maat': {
     expectedName: 'Rugbyshirt op maat',
-    title: 'Rugbyshirt op maat | Vanaf 5 stuks',
+    title: 'Rugbyshirt op maat | Vanaf 10 stuks',
     h1: 'Rugbyshirt op maat voor clubs en ploegen',
     metaDescription:
-      'Rugbyshirt op maat in interlockstof: onbeperkt kleuren en motieven, naam en nummer, ronde hals of V-hals. Vanaf 5 stuks, gemaakt in Europa.',
+      'Rugbyshirt op maat in interlockstof: onbeperkt kleuren en motieven, naam en nummer, ronde hals of V-hals. Vanaf 10 stuks, gemaakt in Europa.',
     introHtml: `
 <p>Ontwerp het rugbyshirt op maat van uw club, uw ploeg of uw toernooi. Motief, kleuren, logo's, namen en nummers: er zijn geen beperkingen, elk shirt wordt speciaal voor u bedrukt.</p>
-<p>De shirts worden gemaakt van 100 % polyester interlockstof, dikker en steviger dan de stof van voetbalshirts. Gemaakt in Europa vanaf 5 stuks, met een ontwerp dat ons team vóór de productie voorbereidt.</p>`,
+<p>De shirts worden gemaakt van 100 % polyester interlockstof, dikker en steviger dan de stof van voetbalshirts. Gemaakt in Europa vanaf 10 stuks, met een ontwerp dat ons team vóór de productie voorbereidt.</p>`,
     seoBlockHtml: `
 <h2>Een interlockstof ontworpen voor rugby</h2>
 <p>Rugby stelt eisen aan textiel die andere teamsporten niet kennen. Daarom gebruiken onze rugbyshirts op maat niet de stof van een voetbalshirt: ze worden gemaakt van 100 % polyester interlock, een dikker en steviger breisel dat speciaal ontworpen is voor rugbyshirts.</p>
@@ -168,8 +168,8 @@ const productSeoOverrides: Record<string, ProductSeoOverride> = {
 <h2>Ronde hals of V-hals, van 2 jaar tot 6XL</h2>
 <p>Er zijn twee modellen beschikbaar: het rugbyshirt met ronde hals en het shirt met V-hals. De maten gaan van 2 jaar tot 6XL, zodat u de jeugdploegen, de eerste ploeg, de trainers en de staf in hetzelfde ontwerp kunt kleden.</p>
 <p>Om de outfit te vervolledigen, kunnen onze <a href="/products/sportshort-op-maat/">sportshorts op maat</a> in dezelfde kleuren als het shirt worden geproduceerd.</p>
-<h2>Vanaf 5 stuks, met staffelprijzen</h2>
-<p>De minimale bestelling is 5 shirts, waardoor personalisatie haalbaar is voor een kleine ploeg, een toernooi of een test vóór een clubbestelling. De prijstabel op de pagina toont de prijs per stuk volgens de hoeveelheid, met prijzen die gunstiger worden naarmate het volume stijgt.</p>
+<h2>Vanaf 10 stuks, met staffelprijzen</h2>
+<p>De minimale bestelling is 10 shirts, waardoor personalisatie haalbaar is voor een kleine ploeg, een toernooi of een test vóór een clubbestelling. De prijstabel op de pagina toont de prijs per stuk volgens de hoeveelheid, met prijzen die gunstiger worden naarmate het volume stijgt.</p>
 <p>U kunt tijdens het seizoen tot twee keer extra stuks bijbestellen aan dezelfde prijzen, handig voor een nieuwe speler of een beschadigd shirt in de loop van het jaar.</p>
 <h2>Europese productie en levertijden</h2>
 <p>De rugbyshirts op maat worden gemaakt in Europa, met een standaard levertijd van 4 tot 6 weken na goedkeuring van het ontwerp. Is uw deadline korter? Vermeld die dan meteen bij uw offerteaanvraag: in de meeste gevallen is een spoedprocedure mogelijk, tegen een gemiddelde meerprijs van 30 %, en een expreslevering in 24 of 48 uur kan worden toegevoegd.</p>

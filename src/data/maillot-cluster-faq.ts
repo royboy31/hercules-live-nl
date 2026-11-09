@@ -318,7 +318,7 @@ export const maillotClusterFaq: Record<string, { question: string; answer: strin
     },
     {
       question: 'Wat zijn de minimale en maximale bestelvolumes?',
-      answer: '<p>Het minimumvolume is 5 shirts per bestelling. Voor grote volumes, boven de 100 stuks, bieden we staffelprijzen en specifieke opties aan. Neem gerust contact met ons op om grote bestellingen te bespreken.</p>',
+      answer: '<p>Het minimumvolume is 10 shirts per bestelling. Voor grote volumes, boven de 100 stuks, bieden we staffelprijzen en specifieke opties aan. Neem gerust contact met ons op om grote bestellingen te bespreken.</p>',
     },
     {
       question: 'Hoe onderhoudt u shirts op maat zodat ze zo lang mogelijk meegaan?',
@@ -330,7 +330,7 @@ export const maillotClusterFaq: Record<string, { question: string; answer: strin
     },
     {
       question: 'Wat kost een voetbalshirt op maat?',
-      answer: '<p>De prijs per shirt hangt af van de bestelde hoeveelheid en de gekozen opties: de staffelprijzen staan in de prijstabel op de pagina, vanaf 5 stuks. Vraag een gratis offerte aan voor een precieze prijs op maat van uw ploeg.</p>',
+      answer: '<p>De prijs per shirt hangt af van de bestelde hoeveelheid en de gekozen opties: de staffelprijzen staan in de prijstabel op de pagina, vanaf 10 stuks. Vraag een gratis offerte aan voor een precieze prijs op maat van uw ploeg.</p>',
     },
     {
       question: 'Levert u de shirts op maat in heel Europa?',
