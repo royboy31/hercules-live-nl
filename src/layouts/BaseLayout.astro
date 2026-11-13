@@ -396,28 +396,19 @@ if (jsonLd) {
       if (document.currentScript && document.currentScript.dataset.noTracking) return;
       var loaded=false;
 
-      function inIdle(fn){
-        if('requestIdleCallback' in window) requestIdleCallback(fn,{timeout:3000});
-        else setTimeout(fn,100);
-      }
-
-      // Google Tag Manager — 10s or first meaningful user interaction
+      // Google Tag Manager — loaded at once, no timer and no wait for an interaction.
+      // The Consent Mode default (and the saved-choice replay) runs in <head>, before this.
       function loadGtm(){
         if(loaded) return;
         loaded=true;
-        inIdle(function(){
-          (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-          new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-          j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-          'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-          })(window,document,'script','dataLayer','GTM-PZ4B95L2');
-        });
+        (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-PZ4B95L2');
       }
 
-      var t1=setTimeout(loadGtm, 10000);
-      ['click','keydown'].forEach(function(e){
-        window.addEventListener(e, function(){clearTimeout(t1);loadGtm();}, {once:true,passive:true});
-      });
+      loadGtm();
     })();
   </script>
 
