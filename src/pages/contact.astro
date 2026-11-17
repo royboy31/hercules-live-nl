@@ -555,7 +555,7 @@ const pageDescription = "Neem contact op met Hercules Merchandise voor uw sportm
 </style>
 
 <script>
-  import { pushGenerateLead } from '../lib/tracking';
+  import { enquiryIdFrom, pushGenerateLead } from '../lib/tracking';
 
   document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('contact-form') as HTMLFormElement;
@@ -597,7 +597,7 @@ const pageDescription = "Neem contact op met Hercules Merchandise voor uw sportm
             throw new Error('Submission failed');
           }
 
-          pushGenerateLead('contact');
+          pushGenerateLead('contact', await enquiryIdFrom(response), String(formData.get('email') || ''));
 
           messageDiv.className = 'form-message success';
           messageDiv.textContent = 'Bedankt voor uw bericht! We antwoorden u snel, meestal nog dezelfde dag.';

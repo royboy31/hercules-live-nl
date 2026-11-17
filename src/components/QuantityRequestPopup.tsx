@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { pushGenerateLead } from '../lib/tracking';
+import { enquiryIdFrom, pushGenerateLead } from '../lib/tracking';
 
 interface ProductConfig {
   addons?: Array<{ id: number; name?: string; title?: string }>;
@@ -197,7 +197,7 @@ export default function QuantityRequestPopup({
         throw new Error('Submission failed');
       }
 
-      pushGenerateLead('contact');
+      pushGenerateLead('contact', await enquiryIdFrom(response), formData.email);
       setIsSuccess(true);
     } catch (err) {
       setError('Er is een fout opgetreden. Probeer het opnieuw.');
