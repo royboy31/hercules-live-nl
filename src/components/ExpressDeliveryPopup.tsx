@@ -176,7 +176,11 @@ export default function ExpressDeliveryPopup({
       // Build attributes string
       const attributesStr = Object.entries(selectedAttributes)
         .filter(([_, value]) => value.toLowerCase() !== 'default')
-        .map(([key, value]) => `${key.replace(/^pa_/, '')}: ${value}`)
+        .map(([key, value]) => {
+          // Same Dutch title + term name the popup shows, not the internal slugs
+          const title = config?.attributes?.[key]?.display_title || key.replace(/^pa_/, '');
+          return `${title}: ${getAttributeLabel(key, value)}`;
+        })
         .join(', ');
 
       const SKIP_ADDON_VALUES = ['aucun', 'geen', 'none', 'n/a', '-', ''];

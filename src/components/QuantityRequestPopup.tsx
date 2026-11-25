@@ -2,6 +2,10 @@ import { useState, useRef, useEffect } from 'react';
 import { enquiryIdFrom, pushGenerateLead } from '../lib/tracking';
 
 interface ProductConfig {
+  attributes?: Record<string, {
+    terms?: Array<{ slug: string; name: string }>;
+    display_title?: string;
+  }>;
   addons?: Array<{ id: number; name?: string; title?: string }>;
 }
 
@@ -145,10 +149,16 @@ export default function QuantityRequestPopup({
     setError(null);
 
     try {
-      // Format attributes as readable string (e.g., "farbe: rot, größe: XL")
+      // Readable string with the Dutch step title + option name (e.g. "Formaat: 140 x 18 cm"),
+      // not the internal slugs
       const attributesStr = Object.entries(selectedAttributes)
         .filter(([_, value]) => value && value.toLowerCase() !== 'default')
-        .map(([key, value]) => `${key.replace(/^pa_/, '')}: ${value}`)
+        .map(([key, value]) => {
+          const attr = config?.attributes?.[key];
+          const title = attr?.display_title || key.replace(/^pa_/, '');
+          const label = attr?.terms?.find(t => t.slug === value)?.name || value;
+          return `${title}: ${label}`;
+        })
         .join(', ');
 
       // Format addons as readable string (same logic as ExpressDeliveryPopup)
