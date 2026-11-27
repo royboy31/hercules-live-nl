@@ -620,7 +620,8 @@ async function syncImageToKV(
   productSlug: string,
   imageIndex: number = 0,
   forceRefresh: boolean = false,
-  size: 'full' | 'thumb' = 'full'
+  size: 'full' | 'thumb' = 'full',
+  attachmentId?: number
 ): Promise<boolean> {
   if (!imageUrl || !productSlug) {
     return false;
@@ -634,11 +635,16 @@ async function syncImageToKV(
   }
 
   try {
-    // Check if image already exists in KV (skip download to save API calls)
+    // Check if image already exists in KV (skip download to save API calls).
+    // When the caller knows the WP attachment id, a cached entry only counts as
+    // current if its stored attachmentId matches - a replaced image (new id,
+    // same key) falls through and gets re-downloaded.
     if (!forceRefresh) {
-      const existing = await kv.get(kvKey);
-      if (existing) {
-        // Image already cached, skip
+      const { value: existing, metadata: existingMeta } = await kv.getWithMetadata<{
+        attachmentId?: number;
+      }>(kvKey);
+      if (existing && (attachmentId === undefined || existingMeta?.attachmentId === attachmentId)) {
+        // Image already cached and still current, skip
         return true;
       }
     }
@@ -717,6 +723,7 @@ async function syncImageToKV(
           syncedAt: new Date().toISOString(),
           imageIndex,
           size,
+          attachmentId,
         },
       }
     );
@@ -1661,7 +1668,7 @@ async function syncAllPosts(env: Env): Promise<{ synced: number; errors: string[
 
         // Cache featured image if it exists
         if (syncedPost.featuredImage && post.slug) {
-          await syncImageToKV(env.PRODUCTS_KV, syncedPost.featuredImage, `post:${post.slug}`);
+          await syncImageToKV(env.PRODUCTS_KV, syncedPost.featuredImage, `post:${post.slug}`, 0, false, 'full', post.featured_media || undefined);
         }
 
         // Add to index
@@ -1732,7 +1739,7 @@ async function syncSinglePost(env: Env, postId: number): Promise<SyncedPost | nu
 
     // Cache featured image
     if (syncedPost.featuredImage && post.slug) {
-      await syncImageToKV(env.PRODUCTS_KV, syncedPost.featuredImage, `post:${post.slug}`);
+      await syncImageToKV(env.PRODUCTS_KV, syncedPost.featuredImage, `post:${post.slug}`, 0, false, 'full', post.featured_media || undefined);
     }
 
     // Update index
